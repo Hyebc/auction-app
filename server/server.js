@@ -20,15 +20,23 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-const TEAM_COUNT = 11;
+const TEAM_NAMES = [
+  '김선생', '김꾸루꾸루', '아무무를왜했을까', '초록머리만쏴', '하온부',
+  '챌린저서포터', '카이사홀릭', '도선생', '아쉬운척 미안한척', '배응칠', '열쇠조각2개'
+];
 const INITIAL_POINTS = 1000;
+
+// 팀별 포인트 객체 { 팀명: 포인트 }
+let teamPoints = {};
+TEAM_NAMES.forEach(name => {
+  teamPoints[name] = INITIAL_POINTS;
+});
 
 let currentBid = 0;
 let highestBidder = null;
 let bidHistory = [];
 let currentItem = null;
 let auctionResults = []; // 낙찰 목록 저장용
-let teamPoints = Array(TEAM_COUNT).fill(INITIAL_POINTS);
 let countdownTimer = null;
 
 io.on('connection', (socket) => {
@@ -50,15 +58,15 @@ io.on('connection', (socket) => {
   });
 
   // 입찰 처리
-  socket.on('placeBid', ({ bid, user, teamNumber, chance }) => {
+  socket.on('placeBid', ({ bid, user, chance }) => {
     const time = new Date().toLocaleTimeString();
 
-    if (typeof teamNumber !== 'number' || teamNumber < 1 || teamNumber > TEAM_COUNT) {
-      socket.emit('bidRejected', { message: '유효하지 않은 팀 번호입니다.' });
+    if (!TEAM_NAMES.includes(user)) {
+      socket.emit('bidRejected', { message: '유효하지 않은 팀명입니다.' });
       return;
     }
 
-    if (teamPoints[teamNumber - 1] < bid) {
+    if (teamPoints[user] < bid) {
       socket.emit('bidRejected', { message: '잔여 포인트가 부족합니다.' });
       return;
     }
@@ -70,7 +78,6 @@ io.on('connection', (socket) => {
       const newBid = { bid, user, time, chance: !!chance };
       bidHistory.push(newBid);
 
-      // 관리자만 실시간 입찰 로그 바로 확인 가능 (관리자 접속을 어떻게 구분하는지 필요시 추가)
       io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints });
 
       console.log(`💸 ${user}님이 ${bid}원 입찰 (${time})${chance ? ' [찬스권]' : ''}`);
@@ -81,14 +88,10 @@ io.on('connection', (socket) => {
 
   // 낙찰 처리
   socket.on('declareWinner', () => {
-    if (highestBidder) {
-      const teamNumber = parseInt(highestBidder.replace(/[^0-9]/g, ''), 10);
-
-      if (!isNaN(teamNumber) && teamNumber >= 1 && teamNumber <= TEAM_COUNT) {
-        teamPoints[teamNumber - 1] -= currentBid;
-        if (teamPoints[teamNumber - 1] < 0) {
-          teamPoints[teamNumber - 1] = 0;
-        }
+    if (highestBidder && TEAM_NAMES.includes(highestBidder)) {
+      teamPoints[highestBidder] -= currentBid;
+      if (teamPoints[highestBidder] < 0) {
+        teamPoints[highestBidder] = 0;
       }
 
       auctionResults.push({
@@ -112,6 +115,8 @@ io.on('connection', (socket) => {
       highestBidder = null;
       bidHistory = [];
       currentItem = null;
+    } else {
+      socket.emit('bidRejected', { message: '낙찰처리 불가 - 유효한 낙찰자가 없습니다.' });
     }
   });
 
