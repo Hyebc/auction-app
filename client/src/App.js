@@ -38,30 +38,39 @@ function App() {
   fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
     .then(res => res.text())
     .then(text => {
-      const json = JSON.parse(text.substring(47).slice(0, -2));
-      const rows = json.table.rows.slice(2, 57); // 실제 선수 데이터 영역
-      const row = rows.find(r => r.c[5]?.v === currentItem); // F열: 선수 이름
+      try {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows.slice(2, 57); // 실제 선수 데이터 영역 (3~57행)
 
-      if (!row) {
-        setPlayerIntro('선수를 찾을 수 없습니다.');
-        return;
+        // F열(인덱스 5)이 선수 이름
+        const row = rows.find(r => r.c[5]?.v === currentItem);
+
+        if (!row) {
+          setPlayerIntro('선수를 찾을 수 없습니다.');
+          return;
+        }
+
+        const mainPos = row.c[9]?.v || '-';          // J열: 주 포지션
+        const subPos = row.c[10]?.v || '-';          // K열: 부 포지션
+        // L~N열: 주력 챔피언 3개, 값이 있을 경우만 콤마로 연결
+        const champs = [row.c[11]?.v, row.c[12]?.v, row.c[13]?.v].filter(Boolean).join(', ') || '-';
+        const message = row.c[14]?.v || '등록된 참가자 소개글이 없습니다.'; // O열: 참가자의 말
+
+        // 줄바꿈 문자 \n을 그대로 넣고, JSX에서 white-space: pre-line 스타일로 줄바꿈 처리 가능
+        const formattedIntro = 
+          `🧭 주 포지션: ${mainPos}\n` +
+          `🎯 부 포지션: ${subPos}\n` +
+          `🧩 주력 챔피언: ${champs}\n\n` +
+          `💬 참가자의 말:\n${message}`;
+
+        setPlayerIntro(formattedIntro);
+      } catch (error) {
+        console.error('JSON 파싱 오류:', error);
+        setPlayerIntro('소개글을 불러오는 데 실패했습니다.');
       }
-
-      const mainPos = row.c[9]?.v || '-';         // J열
-      const subPos = row.c[10]?.v || '-';         // K열
-      const champs = [row.c[11]?.v, row.c[12]?.v, row.c[13]?.v].filter(Boolean).join(', ') || '-'; // L~N열
-      const message = row.c[14]?.v || '등록된 참가자 소개글이 없습니다.'; // O열
-
-      const formattedIntro = 
-        `🧭 **주 포지션**: **${mainPos}**\n` +
-        `🎯 부 포지션: ${subPos}\n` +
-        `🧩 주력 챔피언: ${champs}\n\n` +
-        `💬 참가자의 말:\n${message}`;
-
-      setPlayerIntro(formattedIntro);
     })
     .catch(() => setPlayerIntro('소개글을 불러오는 데 실패했습니다.'));
-  }, [currentItem]);
+}, [currentItem]);
 
   // 소켓 이벤트 등록
   useEffect(() => {
