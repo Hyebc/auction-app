@@ -127,12 +127,24 @@ function App() {
     setMessage('');
   };
 
+  // 각 입찰자의 총 낙찰 포인트 합산 (잔여포인트 계산용)
+  const pointsUsedByUser = auctionResults.reduce((acc, cur) => {
+    acc[cur.user] = (acc[cur.user] || 0) + cur.price;
+    return acc;
+  }, {});
+
+  // 잔여포인트 계산 (기본 1000P - 낙찰사용포인트)
+  const getRemainingPoints = user => {
+    const used = pointsUsedByUser[user] || 0;
+    return 1000 - used;
+  };
+
   if (!username) {
     return (
       <div
         style={{
           padding: 40,
-          fontFamily: 'Arial',
+          fontFamily: "'Nanum Square', sans-serif",
           display: 'flex',
           justifyContent: 'center',
           gap: 50,
@@ -141,14 +153,24 @@ function App() {
         }}
       >
         {/* 좌측: 일반 사용자 로그인 */}
-        <div style={{ flex: 1, border: '1px solid #ccc', padding: 20, borderRadius: 8 }}>
-          <h2 style={{ textAlign: 'center' }}>멸망전 팀장명 로그인</h2>
+        <div
+          style={{
+            flex: 1,
+            border: '1px solid #ccc',
+            padding: 20,
+            borderRadius: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <h2 style={{ textAlign: 'center', marginBottom: 30 }}>멸망전 팀장명 로그인</h2>
           <input
             type="text"
             placeholder="팀장명 입력"
             value={username}
             onChange={e => setUsername(e.target.value)}
-            style={{ width: '100%', padding: 10, marginTop: 20, fontSize: 16 }}
+            style={{ width: '100%', padding: 10, fontSize: 16, marginBottom: 20 }}
             onKeyDown={e => {
               if (e.key === 'Enter') handleUserLogin();
             }}
@@ -156,9 +178,8 @@ function App() {
           <button
             onClick={handleUserLogin}
             style={{
-              marginTop: 20,
               width: '100%',
-              padding: 10,
+              padding: 12,
               fontSize: 16,
               backgroundColor: '#4caf50',
               color: 'white',
@@ -172,14 +193,24 @@ function App() {
         </div>
 
         {/* 우측: 관리자 로그인 */}
-        <div style={{ flex: 1, border: '1px solid #ccc', padding: 20, borderRadius: 8 }}>
-          <h2 style={{ textAlign: 'center' }}>관리자 로그인</h2>
+        <div
+          style={{
+            flex: 1,
+            border: '1px solid #ccc',
+            padding: 20,
+            borderRadius: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <h2 style={{ textAlign: 'center', marginBottom: 30 }}>관리자 로그인</h2>
           <input
             type="text"
             placeholder="관리자 ID"
             value={adminId}
             onChange={e => setAdminId(e.target.value)}
-            style={{ width: '100%', padding: 10, marginTop: 20, fontSize: 16 }}
+            style={{ width: '100%', padding: 10, fontSize: 16, marginBottom: 12 }}
             onKeyDown={e => {
               if (e.key === 'Enter') handleAdminLogin();
             }}
@@ -189,7 +220,7 @@ function App() {
             placeholder="비밀번호"
             value={adminPass}
             onChange={e => setAdminPass(e.target.value)}
-            style={{ width: '100%', padding: 10, marginTop: 10, fontSize: 16 }}
+            style={{ width: '100%', padding: 10, fontSize: 16, marginBottom: 20 }}
             onKeyDown={e => {
               if (e.key === 'Enter') handleAdminLogin();
             }}
@@ -197,9 +228,8 @@ function App() {
           <button
             onClick={handleAdminLogin}
             style={{
-              marginTop: 20,
               width: '100%',
-              padding: 10,
+              padding: 12,
               fontSize: 16,
               backgroundColor: '#2196f3',
               color: 'white',
@@ -213,7 +243,16 @@ function App() {
         </div>
 
         {/* 메시지 */}
-        <div style={{ position: 'absolute', bottom: 20, width: '100%', textAlign: 'center', color: 'red' }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 20,
+            width: '100%',
+            textAlign: 'center',
+            color: 'red',
+            fontFamily: "'Nanum Square', sans-serif",
+          }}
+        >
           {message && <p>{message}</p>}
         </div>
       </div>
@@ -221,18 +260,18 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', fontFamily: 'Arial', padding: 20, gap: 20 }}>
-      {/* 좌측: 낙찰 목록 (가로 한 줄) */}
+    <div style={{ display: 'flex', fontFamily: "'Nanum Square', sans-serif", padding: 20, gap: 20 }}>
+      {/* 좌측: 낙찰 목록 (가로 한 줄, 넓이 확대) */}
       <div
         style={{
-          flex: '2',
-          minWidth: 250,
+          flex: '3',
+          minWidth: 300,
           overflowX: 'auto',
           whiteSpace: 'nowrap',
           paddingBottom: 10,
         }}
       >
-        <h3>🏆 낙찰 현황</h3>
+        <h3 style={{ fontSize: '18px' }}>🏆 낙찰 현황</h3>
         {auctionResults.length === 0 ? (
           <p>낙찰 내역 없음</p>
         ) : (
@@ -245,13 +284,16 @@ function App() {
                 padding: 10,
                 marginRight: 10,
                 borderRadius: 6,
-                minWidth: 150,
+                minWidth: 180,
                 verticalAlign: 'top',
                 boxSizing: 'border-box',
+                fontSize: 14,
               }}
               title={`${user} 선수: ${item}, 금액: ${price.toLocaleString()}P`}
             >
-              <strong>{user}</strong>
+              <strong>
+                {user} (잔여: {getRemainingPoints(user).toLocaleString()}P)
+              </strong>
               <br />
               선수: {item}
               <br />
@@ -287,8 +329,8 @@ function App() {
         </div>
       </div>
 
-      {/* 우측: 입찰 UI */}
-      <div style={{ flex: '1', minWidth: 300 }}>
+      {/* 우측: 입찰 UI (너비 축소) */}
+      <div style={{ flex: '0.8', minWidth: 260 }}>
         <h3>⚡ 실시간 입찰</h3>
         <p>
           현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
@@ -315,6 +357,14 @@ function App() {
                 style={{ padding: '6px 12px', fontSize: 14 }}
               >
                 +10
+              </button>
+              <button
+                onClick={() =>
+                  setBidInput(prev => String(Number(prev || currentBid) + 50))
+                }
+                style={{ padding: '6px 12px', fontSize: 14 }}
+              >
+                +50
               </button>
               <button
                 onClick={() =>
