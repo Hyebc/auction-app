@@ -30,31 +30,37 @@ function App() {
 
   // 구글 시트에서 선수 목록 로드 (관리자용)
   useEffect(() => {
-    fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows.slice(2, 57);
-        const options = rows.map(r => r.c[5]?.v).filter(Boolean);
-        setPlayerOptions(options);
-      });
-  }, []);
+  if (!currentItem) {
+    setPlayerIntro('');
+    return;
+  }
 
-  // 선수 소개 로드 (현재 입찰 아이템 변경 시)
-  useEffect(() => {
-    if (!currentItem) {
-      setPlayerIntro('');
-      return;
-    }
-    fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows.slice(2, 57);
-        const row = rows.find(r => r.c[5]?.v === currentItem);
-        setPlayerIntro(row?.c[14]?.v || '등록된 소개글이 없습니다.');
-      })
-      .catch(() => setPlayerIntro('소개글을 불러오는 데 실패했습니다.'));
+  fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
+    .then(res => res.text())
+    .then(text => {
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      const rows = json.table.rows.slice(2, 57); // 실제 선수 데이터 영역
+      const row = rows.find(r => r.c[5]?.v === currentItem); // F열: 선수 이름
+
+      if (!row) {
+        setPlayerIntro('선수를 찾을 수 없습니다.');
+        return;
+      }
+
+      const mainPos = row.c[9]?.v || '-';         // J열
+      const subPos = row.c[10]?.v || '-';         // K열
+      const champs = [row.c[11]?.v, row.c[12]?.v, row.c[13]?.v].filter(Boolean).join(', ') || '-'; // L~N열
+      const message = row.c[14]?.v || '등록된 참가자 소개글이 없습니다.'; // O열
+
+      const formattedIntro = 
+        `🧭 **주 포지션**: **${mainPos}**\n` +
+        `🎯 부 포지션: ${subPos}\n` +
+        `🧩 주력 챔피언: ${champs}\n\n` +
+        `💬 참가자의 말:\n${message}`;
+
+      setPlayerIntro(formattedIntro);
+    })
+    .catch(() => setPlayerIntro('소개글을 불러오는 데 실패했습니다.'));
   }, [currentItem]);
 
   // 소켓 이벤트 등록
