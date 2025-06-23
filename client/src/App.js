@@ -6,6 +6,10 @@ const socket = io('http://63.246.112.245:3000');
 function App() {
   const [username, setUsername] = useState('');
   const [nameInput, setNameInput] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPassInput, setAdminPassInput] = useState('');
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
+
   const [bidInput, setBidInput] = useState('');
   const [currentBid, setCurrentBid] = useState(0);
   const [highestBidder, setHighestBidder] = useState(null);
@@ -13,6 +17,8 @@ function App() {
   const [message, setMessage] = useState('');
   const [currentItem, setCurrentItem] = useState(null);
   const [itemInput, setItemInput] = useState('');
+
+  const ADMIN_PASSWORD = 'zigops_25';
 
   // 추가: 낙찰 목록 상태
   const [auctionResults, setAuctionResults] = useState([]);
@@ -52,7 +58,6 @@ function App() {
       setMessage('');
     });
 
-    // 추가: 낙찰 목록 수신
     socket.on('auctionResults', (results) => {
       setAuctionResults(results);
     });
@@ -91,6 +96,22 @@ function App() {
     setItemInput('');
   };
 
+  const resetAuction = () => {
+    // 서버에 reset 이벤트 emit 필요하면 추가 가능 (예: socket.emit('resetAuction'))
+    window.location.reload(); // 간단히 페이지 새로고침으로 초기화
+  };
+
+  const handleAdminLogin = () => {
+    if (adminPassInput === ADMIN_PASSWORD) {
+      setIsAdminVerified(true);
+      setUsername('admin');
+      setMessage('');
+    } else {
+      setMessage('비밀번호가 올바르지 않습니다.');
+    }
+    setAdminPassInput('');
+  };
+
   return (
     <div style={{ maxWidth: 1200, margin: '20px auto', fontFamily: 'Arial' }}>
       {!username ? (
@@ -109,6 +130,25 @@ function App() {
           >
             확인
           </button>
+
+          <hr style={{ margin: '30px 0' }} />
+
+          <h2>관리자 로그인</h2>
+          <input
+            type="password"
+            value={adminPassInput}
+            onChange={(e) => setAdminPassInput(e.target.value)}
+            placeholder="비밀번호 입력"
+            style={{ padding: 8, width: '60%', fontSize: 16 }}
+          />
+          <button
+            onClick={handleAdminLogin}
+            style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+          >
+            관리자 로그인
+          </button>
+
+          {message && <p style={{ color: 'red', marginTop: 10 }}>{message}</p>}
         </div>
       ) : (
         <>
@@ -143,7 +183,7 @@ function App() {
               )}
             </div>
 
-            {/* 오른쪽: 기존 입찰 내역 및 인터페이스 */}
+            {/* 오른쪽: 입찰 내역 및 UI */}
             <div style={{ width: '60%' }}>
               <h3>📦 입찰 내역</h3>
               {bidHistory.length === 0 ? (
@@ -176,28 +216,34 @@ function App() {
                 </div>
               )}
 
-              <h1>실시간 경매</h1>
-              <p>👤 <strong>{username}</strong>님</p>
-              <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
-              <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
-
-              <input
-                type="number"
-                value={bidInput}
-                onChange={(e) => setBidInput(e.target.value)}
-                placeholder="입찰가 입력"
-                style={{ padding: 8, width: '60%', fontSize: 16 }}
-              />
-              <button
-                onClick={placeBid}
-                style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
-              >
-                입찰하기
-              </button>
-
-              {username === 'admin' && (
+              {/* 관리자면 입찰 UI 대신 안내 문구 */}
+              {!isAdminVerified && (
                 <>
-                  <br /><br />
+                  <h1>실시간 경매</h1>
+                  <p>👤 <strong>{username}</strong>님</p>
+                  <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
+                  <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
+
+                  <input
+                    type="number"
+                    value={bidInput}
+                    onChange={(e) => setBidInput(e.target.value)}
+                    placeholder="입찰가 입력"
+                    style={{ padding: 8, width: '60%', fontSize: 16 }}
+                  />
+                  <button
+                    onClick={placeBid}
+                    style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+                  >
+                    입찰하기
+                  </button>
+                </>
+              )}
+
+              {/* 관리자 UI: 입찰 대상 입력, 입찰 시작, 낙찰 처리, 경매 초기화 */}
+              {isAdminVerified && (
+                <>
+                  <br />
                   <input
                     type="text"
                     value={itemInput}
@@ -218,6 +264,14 @@ function App() {
                     style={{ padding: '8px 16px', background: '#222', color: 'white', fontSize: 16 }}
                   >
                     🏁 낙찰 처리
+                  </button>
+
+                  <br /><br />
+                  <button
+                    onClick={resetAuction}
+                    style={{ padding: '8px 16px', background: '#d33', color: 'white', fontSize: 16 }}
+                  >
+                    🔄 경매 초기화 (Reset)
                   </button>
                 </>
               )}
