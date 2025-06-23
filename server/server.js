@@ -9,7 +9,9 @@ app.use(cors());
 
 // React 빌드 폴더를 정적 파일로 서빙
 app.use(express.static(path.join(__dirname, '../client/build')));
-
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
