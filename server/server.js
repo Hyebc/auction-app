@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');
+const path = require('path');  // 추가 필요
 
 const app = express();
 app.use(cors());
@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname, '../client/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
@@ -44,14 +45,26 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 🏁 낙찰 처리 이벤트 추가
+  socket.on('declareWinner', () => {
+    if (highestBidder) {
+      io.emit('auctionEnded', {
+        winner: highestBidder,
+        price: currentBid,
+      });
+
+      console.log(`🎉 낙찰자: ${highestBidder}, 금액: ${currentBid}`);
+
+      // 초기화
+      currentBid = 0;
+      highestBidder = null;
+      bidHistory = [];
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`❌ 사용자 퇴장: ${socket.id}`);
   });
-});
-
-// React 라우팅 지원을 위한 모든 GET 요청에 index.html 반환
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
 
 const PORT = 3000;
