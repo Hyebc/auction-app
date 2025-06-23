@@ -41,8 +41,10 @@ function App() {
         const names = rows
           .map(r => r.c[5]?.v)  // F열(인덱스 5)이 선수 이름
           .filter(Boolean);
+        const soldOutPlayers = auctionResults.map(r => r.item);
+        const availablePlayers = names.filter(name => !soldOutPlayers.includes(name));
 
-        setPlayerOptions(names);
+        setPlayerOptions(availablePlayers);
 
         if (!currentItem) {
           setPlayerIntro('');
