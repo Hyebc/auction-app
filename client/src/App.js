@@ -204,6 +204,21 @@ function App() {
     };
   }, []);
 
+  // 입찰자별 최고 입찰 금액 계산
+  const winnerByUser = bidHistory.reduce((acc, bid) => {
+    if (!acc[bid.user] || acc[bid.user] < bid.bid) acc[bid.user] = bid.bid;
+    return acc;
+  }, {});
+
+  const winnersList = Object.entries(winnerByUser).map(([user, bid]) => ({
+    user,
+    bid,
+  }));
+
+  // 낙찰자 아이콘 (임시)
+  const sampleIconUrl =
+    'https://cdn-icons-png.flaticon.com/512/147/147144.png';
+
   const placeBid = () => {
     const bidValue = Number(bidInput);
     if (!bidValue || bidValue <= currentBid) {
@@ -267,39 +282,56 @@ function App() {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 40 }}>
-        {/* 좌측 낙찰 목록 */}
-        <div style={{ width: '40%', maxHeight: '80vh', overflowY: 'auto' }}>
-          <h3>📦 입찰 내역</h3>
-          {bidHistory.length === 0 ? (
-            <p>아직 입찰이 없습니다.</p>
+        {/* 좌측 낙찰 목록 카드 UI */}
+        <div
+          style={{
+            width: '40%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          <h3>🏆 낙찰 목록</h3>
+          {winnersList.length === 0 ? (
+            <p>아직 낙찰된 내역이 없습니다.</p>
           ) : (
-            [...new Set(bidHistory.map((e) => e.user))].map((user, idx) => {
-              const userBids = bidHistory.filter((e) => e.user === user);
-              return (
-                <div key={idx} style={{ marginBottom: 20 }}>
-                  <h4>{user}</h4>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {userBids.slice(0, 4).map((bid, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          background: '#f5f5f5',
-                          padding: '6px 10px',
-                          borderRadius: 6,
-                          fontSize: 14,
-                        }}
-                      >
-                        {bid.bid.toLocaleString()}원
-                      </div>
-                    ))}
+            winnersList.map(({ user, bid }, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 12,
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: 8,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                }}
+              >
+                <img
+                  src={sampleIconUrl}
+                  alt="user icon"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    marginRight: 16,
+                    objectFit: 'cover',
+                  }}
+                />
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: 18 }}>{user}</div>
+                  <div style={{ fontSize: 16, color: '#444' }}>
+                    낙찰 금액: <strong>{bid.toLocaleString()} 원</strong>
                   </div>
                 </div>
-              );
-            })
+              </div>
+            ))
           )}
         </div>
 
-        {/* 우측 입찰 내역 및 UI */}
+        {/* 우측 기존 입찰 UI */}
         <div style={{ width: '60%' }}>
           <h1>실시간 경매</h1>
           <p>
