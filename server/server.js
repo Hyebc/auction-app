@@ -27,18 +27,15 @@ let currentBid = 0;
 let highestBidder = null;
 let bidHistory = [];
 let currentItem = null;
-
 let auctionResults = []; // 낙찰 목록 저장용
-
 let teamPoints = Array(TEAM_COUNT).fill(INITIAL_POINTS);
+let countdownTimer = null;
 
 io.on('connection', (socket) => {
   console.log(`✅ 사용자 접속: ${socket.id}`);
 
   // 초기 데이터 전달 (포인트 포함)
   socket.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints });
-
-  // 낙찰 결과 초기화
   socket.emit('auctionResults', auctionResults);
 
   // 관리자 전용 입찰 시작 이벤트
@@ -49,7 +46,6 @@ io.on('connection', (socket) => {
     bidHistory = [];
 
     io.emit('auctionStarted', { itemName });
-
     console.log(`📦 입찰 시작: ${itemName}`);
   });
 
@@ -57,19 +53,16 @@ io.on('connection', (socket) => {
   socket.on('placeBid', ({ bid, user, teamNumber, chance }) => {
     const time = new Date().toLocaleTimeString();
 
-    // teamNumber 유효성 검사
     if (typeof teamNumber !== 'number' || teamNumber < 1 || teamNumber > TEAM_COUNT) {
       socket.emit('bidRejected', { message: '유효하지 않은 팀 번호입니다.' });
       return;
     }
 
-    // 잔여 포인트 체크
     if (teamPoints[teamNumber - 1] < bid) {
       socket.emit('bidRejected', { message: '잔여 포인트가 부족합니다.' });
       return;
     }
 
-    // 입찰가가 현재가보다 높아야 함
     if (bid > currentBid) {
       currentBid = bid;
       highestBidder = user;
@@ -77,9 +70,10 @@ io.on('connection', (socket) => {
       const newBid = { bid, user, time, chance: !!chance };
       bidHistory.push(newBid);
 
+      // 관리자만 실시간 입찰 로그 바로 확인 가능 (관리자 접속을 어떻게 구분하는지 필요시 추가)
       io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints });
 
-      console.log(`💸 ${user}님이 ${bid}원 입찰 (${time})${chance ? ' (찬스권 사용)' : ''}`);
+      console.log(`💸 ${user}님이 ${bid}원 입찰 (${time})${chance ? ' [찬스권]' : ''}`);
     } else {
       socket.emit('bidRejected', { message: '입찰가가 현재가보다 낮습니다.' });
     }
@@ -92,9 +86,8 @@ io.on('connection', (socket) => {
 
       if (!isNaN(teamNumber) && teamNumber >= 1 && teamNumber <= TEAM_COUNT) {
         teamPoints[teamNumber - 1] -= currentBid;
-
         if (teamPoints[teamNumber - 1] < 0) {
-          teamPoints[teamNumber - 1] = 0; // 음수 방지
+          teamPoints[teamNumber - 1] = 0;
         }
       }
 
@@ -122,14 +115,18 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 관리자 카운트다운 시작 이벤트
+  // 관리자 카운트다운 시작 이벤트 (예: 5초, 3초)
   socket.on('countdownStart', ({ seconds }) => {
     io.emit('countdownStart', { seconds });
     console.log(`⏳ 카운트다운 시작: ${seconds}초`);
-  });
 
-  socket.on('requestBidInit', () => {
-    socket.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints });
+    if (countdownTimer) clearTimeout(countdownTimer);
+
+    countdownTimer = setTimeout(() => {
+      // 카운트다운 종료 시점에 입찰로그 공개 이벤트 전송
+      io.emit('revealBidLog', { bidHistory });
+      console.log('🔔 카운트다운 종료 - 입찰 로그 공개');
+    }, seconds * 1000);
   });
 
   socket.on('disconnect', () => {
