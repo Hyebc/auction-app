@@ -215,7 +215,7 @@ function App() {
           </>
         ) : (
           <>
-            <select value={itemInput} onChange={e => setItemInput(e.target.value)} style={{ padding: 8 }}>
+            <select value={itemInput} onChange={e => setItemInput(e.target.value)} style={{ padding: 8, width: '100%', marginBottom: 8 }}>
               <option value="">선수 선택</option>
               {playerOptions.map((opt, i) => (
                 <option key={i} value={opt}>{opt}</option>
