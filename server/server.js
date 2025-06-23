@@ -53,6 +53,6 @@ app.get('*', (req, res) => {
 });
 
 const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 경매 서버 실행 중: http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 경매 서버 실행 중: http://0.0.0.0:${PORT}`);
 });
