@@ -7,12 +7,10 @@ const TEAM_COUNT = 11;
 const INITIAL_POINTS = 1000;
 
 function App() {
-  // 로그인 입력 분리
   const [username, setUsername] = useState('');
-  const [loginInput, setLoginInput] = useState(''); // 입력 상태 따로 관리
+  const [loginInput, setLoginInput] = useState('');
   const [isAdminVerified, setIsAdminVerified] = useState(false);
   const [message, setMessage] = useState('');
-
   const [bidInput, setBidInput] = useState('');
   const [currentBid, setCurrentBid] = useState(0);
   const [highestBidder, setHighestBidder] = useState(null);
@@ -21,10 +19,7 @@ function App() {
   const [itemInput, setItemInput] = useState('');
   const [playerIntro, setPlayerIntro] = useState('');
   const [auctionResults, setAuctionResults] = useState([]);
-
-  const [teamPoints, setTeamPoints] = useState(
-    Array(TEAM_COUNT).fill(INITIAL_POINTS)
-  );
+  const [teamPoints, setTeamPoints] = useState(Array(TEAM_COUNT).fill(INITIAL_POINTS));
 
   useEffect(() => {
     if (!currentItem) {
@@ -39,7 +34,6 @@ function App() {
       .then(text => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
         const rows = json.table.rows;
-
         const row = rows.find(r => r.c[0]?.v === currentItem);
         if (row && row.c[1]?.v) {
           setPlayerIntro(row.c[1].v);
@@ -56,20 +50,14 @@ function App() {
       setHighestBidder(highestBidder);
       setBidHistory(bidHistory);
       setCurrentItem(currentItem);
-
-      if (serverTeamPoints && Array.isArray(serverTeamPoints)) {
-        setTeamPoints(serverTeamPoints);
-      }
+      if (Array.isArray(serverTeamPoints)) setTeamPoints(serverTeamPoints);
     });
 
     socket.on('bidUpdate', ({ currentBid, highestBidder, newBid, teamPoints: serverTeamPoints }) => {
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
       setBidHistory(prev => [...prev, newBid]);
-
-      if (serverTeamPoints && Array.isArray(serverTeamPoints)) {
-        setTeamPoints(serverTeamPoints);
-      }
+      if (Array.isArray(serverTeamPoints)) setTeamPoints(serverTeamPoints);
     });
 
     socket.on('bidRejected', ({ message }) => setMessage(message));
@@ -81,10 +69,7 @@ function App() {
       setBidHistory([]);
       setCurrentItem(null);
       setPlayerIntro('');
-
-      if (serverTeamPoints && Array.isArray(serverTeamPoints)) {
-        setTeamPoints(serverTeamPoints);
-      }
+      if (Array.isArray(serverTeamPoints)) setTeamPoints(serverTeamPoints);
     });
 
     socket.on('auctionStarted', ({ itemName }) => {
@@ -93,8 +78,6 @@ function App() {
       setHighestBidder(null);
       setBidHistory([]);
       setMessage('');
-
-      // 🆕 실시간 경매 흐름 복구: 서버에 초기 데이터 요청
       socket.emit('requestBidInit');
     });
 
@@ -114,25 +97,17 @@ function App() {
     const bidValue = Number(bidInput);
     if (!bidValue || bidValue <= currentBid) return setMessage('입찰가는 현재가보다 높아야 합니다.');
     if (!username) return setMessage('닉네임을 먼저 입력하세요.');
-
     const teamNumber = parseInt(username.replace(/[^0-9]/g, ''), 10);
     if (isNaN(teamNumber) || teamNumber < 1 || teamNumber > TEAM_COUNT) {
-      setMessage('유효한 팀명을 입력하세요 (예: 팀1)');
-      return;
+      return setMessage('유효한 팀명을 입력하세요 (예: 팀1)');
     }
-
-    if (teamPoints[teamNumber - 1] < bidValue) {
-      setMessage('잔여 포인트가 부족합니다.');
-      return;
-    }
-
+    if (teamPoints[teamNumber - 1] < bidValue) return setMessage('잔여 포인트가 부족합니다.');
     socket.emit('placeBid', { bid: bidValue, user: username, teamNumber });
-
     setBidInput('');
     setMessage('');
   };
 
-  const increaseBid = (amount) => {
+  const increaseBid = amount => {
     let currentVal = Number(bidInput) || currentBid;
     setBidInput(String(currentVal + amount));
   };
@@ -140,10 +115,7 @@ function App() {
   const startAuction = () => {
     if (!itemInput.trim()) return;
     socket.emit('startAuction', itemInput.trim());
-
-    // 🆕 서버에 초기 상태 요청
     socket.emit('requestBidInit');
-
     setItemInput('');
   };
 
@@ -166,34 +138,22 @@ function App() {
         <h2>멸망전 경매 로그인</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 30 }}>
           <div style={{ flex: 1, maxWidth: 250 }}>
-            {/* 팀1~팀11 텍스트 제거 */}
             <h3>팀장명</h3>
             <input
               type="text"
               placeholder="팀장명 입력 (예: 팀1)"
-              value={loginInput} // 바인딩된 입력값 사용
+              value={loginInput}
               onChange={e => setLoginInput(e.target.value)}
-              style={{ width: '100%', padding: 10, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+              style={{ width: '100%', padding: 10 }}
             />
             <button
-              onClick={() => setUsername(loginInput.trim())} // 버튼 누를 때 로그인
+              onClick={() => setUsername(loginInput.trim())}
               disabled={!loginInput.trim()}
-              style={{
-                marginTop: 15,
-                width: '100%',
-                padding: 10,
-                fontSize: 16,
-                borderRadius: 4,
-                backgroundColor: loginInput.trim() ? '#007bff' : '#ccc',
-                color: 'white',
-                border: 'none',
-                cursor: loginInput.trim() ? 'pointer' : 'not-allowed',
-              }}
+              style={{ marginTop: 10, padding: 10, width: '100%' }}
             >
               로그인
             </button>
           </div>
-
           <div style={{ flex: 1, maxWidth: 250 }}>
             <h3>관리자 로그인</h3>
             <AdminLogin onAdminLogin={handleLogin} message={message} />
@@ -204,149 +164,103 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', fontFamily: "'Nanum Square', sans-serif", padding: 20, gap: 20 }}>
-      {/* 좌측: 팀별 잔여 포인트 및 낙찰 선수 */}
-      <div style={{ flex: 1.5, minWidth: 300 }}>
+    <div style={{ display: 'flex', fontFamily: "'Nanum Square', sans-serif", padding: 20, gap: 20, height: '100vh' }}>
+      <div style={{ flex: 1.5, minWidth: 300, overflowY: 'auto' }}>
         <h3>🏆 팀별 낙찰 현황</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {teamPoints.map((points, idx) => {
-            // 해당 팀 낙찰 선수 및 가격 찾기
             const teamUserPrefix = `팀${idx + 1}`;
-            const teamResult = auctionResults.find(r => r.user.startsWith(teamUserPrefix)) || null;
+            const teamResults = auctionResults.filter(r => r.user.startsWith(teamUserPrefix));
             return (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  border: '1px solid #ccc',
+              <div key={idx} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 10, backgroundColor: '#fafafa' }}>
+                <div style={{
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  padding: '8px 12px',
                   borderRadius: 6,
-                  padding: 10,
-                  width: '48%',
-                  alignItems: 'center',
-                  gap: 10,
-                  backgroundColor: '#fafafa',
-                }}
-              >
-                {/* 팀 잔여 포인트 박스 */}
-                <div
-                  style={{
-                    minWidth: 100,
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    padding: '10px 12px',
-                    borderRadius: 6,
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                  }}
-                  title={`팀${idx + 1} 잔여 포인트`}
-                >
-                  팀{idx + 1}
-                  <br />
-                  {points.toLocaleString()}P
+                  fontWeight: 'bold',
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}>
+                  팀{idx + 1} ({points.toLocaleString()}P)
                 </div>
-
-                {/* 낙찰 선수 및 금액 */}
-                <div style={{ flex: 1 }}>
-                  <div>
-                    <strong>낙찰 선수:</strong> {teamResult ? teamResult.item : '없음'}
-                  </div>
-                  <div>
-                    <strong>금액:</strong> {teamResult ? teamResult.price.toLocaleString() + 'P' : '-'}
-                  </div>
-                </div>
+                {teamResults.length === 0 ? (
+                  <div>낙찰 선수 없음</div>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {teamResults.map((r, i) => (
+                      <li key={i}><strong>{r.item}</strong> - {r.price.toLocaleString()}P</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 가운데: 선수 소개 및 입찰 로그 */}
-      <div style={{ flex: 2, minWidth: 400 }}>
-        <h3>🎯 입찰 선수 소개</h3>
-        {currentItem ? (
-          <div style={{ marginBottom: 20 }}>
-            <strong>{currentItem}</strong>
-            <p style={{ whiteSpace: 'pre-line', fontSize: 14 }}>{playerIntro}</p>
-          </div>
-        ) : (
-          <p>입찰 대상이 없습니다.</p>
-        )}
-
-        <h4>🕘 입찰 로그</h4>
-        <div style={{ maxHeight: 200, overflowY: 'auto', background: '#fafafa', padding: 10 }}>
-          {bidHistory.length === 0 ? (
-            <p>입찰 기록 없음</p>
-          ) : (
-            bidHistory.map((b, i) => (
-              <div key={i}>
-                {b.time} - {b.user}: {b.bid.toLocaleString()}P
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* 우측: 실시간 입찰 UI */}
-      <div style={{ flex: 1, minWidth: 280 }}>
-        <h3>⚡ 실시간 입찰</h3>
-        <p>
-          현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
-        </p>
-        <p>최고 입찰자: {highestBidder || '없음'}</p>
-
-        {!isAdminVerified ? (
-          <>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <button onClick={() => increaseBid(10)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }} type="button">
-                +10
-              </button>
-              <button onClick={() => increaseBid(50)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }} type="button">
-                +50
-              </button>
-              <button onClick={() => increaseBid(100)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 60 }} type="button">
-                +100
-              </button>
-
+      <div style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 20, height: '100%', overflow: 'hidden' }}>
+        <div style={{ flexShrink: 0 }}>
+          <h3>⚡ 실시간 입찰</h3>
+          <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
+          <p>최고 입찰자: {highestBidder || '없음'}</p>
+          {!isAdminVerified ? (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => increaseBid(10)}>+10</button>
+              <button onClick={() => increaseBid(50)}>+50</button>
+              <button onClick={() => increaseBid(100)}>+100</button>
               <input
                 type="number"
                 value={bidInput}
                 onChange={e => setBidInput(e.target.value)}
                 placeholder="입찰가"
-                style={{ padding: 8, width: '60%', marginLeft: 10 }}
+                style={{ padding: 8, width: '60%' }}
               />
-              <button onClick={placeBid} style={{ padding: '8px 16px', marginLeft: 10, fontSize: 16 }}>
-                입찰
-              </button>
+              <button onClick={placeBid}>입찰</button>
             </div>
-          </>
-        ) : (
-          <>
-            <input
-              value={itemInput}
-              onChange={e => setItemInput(e.target.value)}
-              placeholder="입찰 선수 ID"
-              style={{ padding: 8, width: '80%', marginTop: 10 }}
-            />
-            <button onClick={startAuction} style={{ marginTop: 10, padding: 8 }}>
-              입찰 시작
-            </button>
-            <button onClick={declareWinner} style={{ marginTop: 10, padding: 8 }}>
-              낙찰 처리
-            </button>
-            <button onClick={resetAuction} style={{ marginTop: 10, padding: 8, backgroundColor: '#f33', color: 'white' }}>
-              경매 초기화
-            </button>
-          </>
-        )}
+          ) : (
+            <>
+              <input
+                value={itemInput}
+                onChange={e => setItemInput(e.target.value)}
+                placeholder="입찰 선수 ID"
+                style={{ padding: 8, width: '80%', marginTop: 10 }}
+              />
+              <button onClick={startAuction}>입찰 시작</button>
+              <button onClick={declareWinner}>낙찰 처리</button>
+              <button onClick={resetAuction} style={{ backgroundColor: '#f33', color: 'white' }}>
+                경매 초기화
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <h3>🎯 입찰 선수 소개</h3>
+          {currentItem ? (
+            <div><strong>{currentItem}</strong><p style={{ whiteSpace: 'pre-line', fontSize: 14 }}>{playerIntro}</p></div>
+          ) : (
+            <p>입찰 대상이 없습니다.</p>
+          )}
+          <h4>🕘 입찰 로그</h4>
+          <div style={{ maxHeight: 200, overflowY: 'auto', background: '#fafafa', padding: 10 }}>
+            {bidHistory.length === 0 ? (
+              <p>입찰 기록 없음</p>
+            ) : (
+              bidHistory.map((b, i) => (
+                <div key={i}>{b.time} - {b.user}: {b.bid.toLocaleString()}P</div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// 관리자 로그인 컴포넌트 분리
 function AdminLogin({ onAdminLogin, message }) {
-  const [adminId, setAdminId] = React.useState('');
-  const [adminPass, setAdminPass] = React.useState('');
+  const [adminId, setAdminId] = useState('');
+  const [adminPass, setAdminPass] = useState('');
 
   return (
     <div style={{ textAlign: 'center' }}>
@@ -355,14 +269,14 @@ function AdminLogin({ onAdminLogin, message }) {
         placeholder="관리자 ID"
         value={adminId}
         onChange={e => setAdminId(e.target.value)}
-        style={{ width: '100%', padding: 10, marginBottom: 12, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+        style={{ width: '100%', padding: 10, marginBottom: 12 }}
       />
       <input
         type="password"
         placeholder="비밀번호"
         value={adminPass}
         onChange={e => setAdminPass(e.target.value)}
-        style={{ width: '100%', padding: 10, marginBottom: 20, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+        style={{ width: '100%', padding: 10, marginBottom: 20 }}
       />
       <button
         onClick={() => onAdminLogin(adminId, adminPass)}
@@ -370,19 +284,14 @@ function AdminLogin({ onAdminLogin, message }) {
         style={{
           width: '100%',
           padding: 12,
-          fontSize: 16,
-          borderRadius: 4,
-          border: 'none',
           backgroundColor: adminId.trim() && adminPass.trim() ? '#d9534f' : '#ccc',
           color: 'white',
-          cursor: adminId.trim() && adminPass.trim() ? 'pointer' : 'not-allowed',
+          border: 'none'
         }}
       >
         관리자 로그인
       </button>
-      {message && (
-        <p style={{ color: 'red', marginTop: 12, fontWeight: 'bold' }}>{message}</p>
-      )}
+      {message && <p style={{ color: 'red', marginTop: 12 }}>{message}</p>}
     </div>
   );
 }
