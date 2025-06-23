@@ -145,24 +145,82 @@ function App() {
   };
 
   if (!username) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Nanum Square' }}>
-        <h2>멸망전 경매 로그인</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 30 }}>
-          <div style={{ flex: 1, maxWidth: 250 }}>
-            <h3>팀장명</h3>
-            <input type="text" placeholder="팀장명 입력 (예: 팀1)" value={loginInput} onChange={e => setLoginInput(e.target.value)} style={{ width: '100%', padding: 10 }} />
-            <button onClick={() => setUsername(loginInput.trim())} disabled={!loginInput.trim()} style={{ marginTop: 10, width: '100%', padding: 10 }}>로그인</button>
-          </div>
-          <div style={{ flex: 1, maxWidth: 250 }}>
-            <h3>관리자 로그인</h3>
-            <AdminLogin onAdminLogin={handleLogin} message={message} />
-          </div>
+  return (
+    <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Nanum Square' }}>
+      <h2>멸망전 경매 로그인</h2>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 60, marginTop: 30 }}>
+        {/* 팀장 로그인 영역 */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15, width: 250 }}>
+          <h3 style={{ margin: 0 }}>팀장명</h3>
+          <input
+            type="text"
+            placeholder="팀장명 입력 (예: 팀1)"
+            value={loginInput}
+            onChange={e => setLoginInput(e.target.value)}
+            style={{ width: '100%', padding: 10, fontSize: 16, boxSizing: 'border-box' }}
+          />
+          <button
+            onClick={() => setUsername(loginInput.trim())}
+            disabled={!loginInput.trim()}
+            style={{
+              width: '100%',
+              padding: 10,
+              fontSize: 16,
+              cursor: loginInput.trim() ? 'pointer' : 'not-allowed',
+            }}
+          >
+            로그인
+          </button>
         </div>
-        <div style={{ fontSize: 14, color: '#777', marginTop: 30 }}>Created by Been.</div>
+
+        {/* 관리자 로그인 영역 */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15, width: 250 }}>
+          <h3 style={{ margin: 0 }}>관리자 로그인</h3>
+          <AdminLogin onAdminLogin={handleLogin} message={message} />
+        </div>
       </div>
-    );
-  }
+      <div style={{ fontSize: 14, color: '#777', marginTop: 30 }}>Created by Been.</div>
+    </div>
+  );
+}
+
+function AdminLogin({ onAdminLogin, message }) {
+  const [adminId, setAdminId] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
+      <input
+        type="text"
+        placeholder="관리자 ID"
+        value={adminId}
+        onChange={e => setAdminId(e.target.value)}
+        style={{ width: '100%', padding: 10, fontSize: 16, boxSizing: 'border-box' }}
+      />
+      <input
+        type="password"
+        placeholder="비밀번호"
+        value={adminPass}
+        onChange={e => setAdminPass(e.target.value)}
+        style={{ width: '100%', padding: 10, fontSize: 16, boxSizing: 'border-box' }}
+      />
+      <button
+        onClick={() => onAdminLogin(adminId, adminPass)}
+        style={{
+          width: '100%',
+          padding: 10,
+          fontSize: 16,
+          backgroundColor: '#d9534f',
+          color: 'white',
+          cursor: 'pointer',
+          border: 'none',
+        }}
+      >
+        관리자 로그인
+      </button>
+      {message && <p style={{ color: 'red', margin: 0 }}>{message}</p>}
+    </div>
+  );
+}
 
   return (
     <div style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20 }}>
