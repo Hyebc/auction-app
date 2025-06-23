@@ -12,8 +12,6 @@ function App() {
   const [bidHistory, setBidHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [currentItem, setCurrentItem] = useState(null);
-
-  // 관리자 전용: 입찰 대상 입력
   const [itemInput, setItemInput] = useState('');
 
   useEffect(() => {
@@ -70,7 +68,6 @@ function App() {
       setMessage('닉네임을 먼저 입력하세요.');
       return;
     }
-
     socket.emit('placeBid', { bid: bidValue, user: username });
     setBidInput('');
   };
@@ -86,9 +83,9 @@ function App() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '50px auto', textAlign: 'center', fontFamily: 'Arial' }}>
+    <div style={{ maxWidth: 1200, margin: '20px auto', fontFamily: 'Arial' }}>
       {!username ? (
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <h2>사용자 이름을 입력하세요</h2>
           <input
             type="text"
@@ -106,62 +103,98 @@ function App() {
         </div>
       ) : (
         <>
-          <h1>실시간 경매</h1>
-          <p>👤 <strong>{username}</strong>님</p>
-          {currentItem && <h2>🎯 현재 입찰 대상: {currentItem}</h2>}
-          <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
-          <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
+          {currentItem && (
+            <h2 style={{ textAlign: 'center', fontSize: 28, marginBottom: 30 }}>
+              🎯 현재 입찰 대상: <span style={{ color: '#007bff' }}>{currentItem}</span>
+            </h2>
+          )}
 
-          <input
-            type="number"
-            value={bidInput}
-            onChange={(e) => setBidInput(e.target.value)}
-            placeholder="입찰가 입력"
-            style={{ padding: 8, width: '60%', fontSize: 16 }}
-          />
-          <button
-            onClick={placeBid}
-            style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
-          >
-            입찰하기
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 40 }}>
+            {/* 왼쪽: 낙찰자별 입찰내역 */}
+            <div style={{ width: '40%' }}>
+              <h3>📦 입찰 내역</h3>
+              {bidHistory.length === 0 ? (
+                <p>아직 입찰이 없습니다.</p>
+              ) : (
+                <div>
+                  {[...new Set(bidHistory.map((e) => e.user))].map((user, idx) => {
+                    const userBids = bidHistory.filter((e) => e.user === user);
+                    return (
+                      <div key={idx} style={{ marginBottom: 20 }}>
+                        <h4>{user}</h4>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {userBids.slice(0, 4).map((bid, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                background: '#f5f5f5',
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                fontSize: 14,
+                              }}
+                            >
+                              {bid.bid.toLocaleString()}원
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-          <br /><br />
-          {username === 'admin' && (
-            <>
+            {/* 오른쪽: 경매 인터페이스 */}
+            <div style={{ width: '60%' }}>
+              <h1>실시간 경매</h1>
+              <p>👤 <strong>{username}</strong>님</p>
+              <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
+              <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
+
               <input
-                type="text"
-                value={itemInput}
-                onChange={(e) => setItemInput(e.target.value)}
-                placeholder="입찰 대상 입력"
+                type="number"
+                value={bidInput}
+                onChange={(e) => setBidInput(e.target.value)}
+                placeholder="입찰가 입력"
                 style={{ padding: 8, width: '60%', fontSize: 16 }}
               />
               <button
-                onClick={startAuction}
+                onClick={placeBid}
                 style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
               >
-                입찰 시작
+                입찰하기
               </button>
-              <br /><br />
-              <button
-                onClick={declareWinner}
-                style={{ padding: '8px 16px', background: '#222', color: 'white', fontSize: 16 }}
-              >
-                🏁 낙찰 처리
-              </button>
-            </>
-          )}
 
-          {message && <p style={{ color: 'red' }}>{message}</p>}
+              {username === 'admin' && (
+                <>
+                  <br /><br />
+                  <input
+                    type="text"
+                    value={itemInput}
+                    onChange={(e) => setItemInput(e.target.value)}
+                    placeholder="입찰 대상 입력"
+                    style={{ padding: 8, width: '60%', fontSize: 16 }}
+                  />
+                  <button
+                    onClick={startAuction}
+                    style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+                  >
+                    입찰 시작
+                  </button>
 
-          <h3>입찰 내역</h3>
-          <ul style={{ textAlign: 'left', padding: 0, listStyle: 'none' }}>
-            {bidHistory.map((entry, idx) => (
-              <li key={idx} style={{ borderBottom: '1px solid #ccc', padding: '4px 0' }}>
-                {entry.time} - <strong>{entry.user}</strong>님이 {entry.bid.toLocaleString()}원 입찰
-              </li>
-            ))}
-          </ul>
+                  <br /><br />
+                  <button
+                    onClick={declareWinner}
+                    style={{ padding: '8px 16px', background: '#222', color: 'white', fontSize: 16 }}
+                  >
+                    🏁 낙찰 처리
+                  </button>
+                </>
+              )}
+
+              {message && <p style={{ color: 'red', marginTop: 10 }}>{message}</p>}
+            </div>
+          </div>
         </>
       )}
     </div>

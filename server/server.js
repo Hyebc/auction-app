@@ -2,13 +2,15 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');  // 추가 필요
+const path = require('path');
 
 const app = express();
 app.use(cors());
 
 // React 빌드 폴더를 정적 파일로 서빙
 app.use(express.static(path.join(__dirname, '../client/build')));
+
+// React 라우팅 지원 - 모든 GET 요청에 index.html 반환
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
@@ -21,12 +23,27 @@ const io = new Server(server, {
 let currentBid = 0;
 let highestBidder = null;
 let bidHistory = [];
+let currentItem = null;
 
 io.on('connection', (socket) => {
   console.log(`✅ 사용자 접속: ${socket.id}`);
 
-  socket.emit('bidInit', { currentBid, highestBidder, bidHistory });
+  // 초기 데이터 전달
+  socket.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem });
 
+  // 관리자 전용 입찰 시작 이벤트
+  socket.on('startAuction', (itemName) => {
+    currentItem = itemName;
+    currentBid = 0;
+    highestBidder = null;
+    bidHistory = [];
+
+    io.emit('auctionStarted', { itemName });
+
+    console.log(`📦 입찰 시작: ${itemName}`);
+  });
+
+  // 입찰 처리
   socket.on('placeBid', ({ bid, user }) => {
     const time = new Date().toLocaleTimeString();
 
@@ -45,20 +62,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 🏁 낙찰 처리 이벤트 추가
+  // 낙찰 처리
   socket.on('declareWinner', () => {
     if (highestBidder) {
       io.emit('auctionEnded', {
         winner: highestBidder,
         price: currentBid,
+        itemName: currentItem,
       });
 
-      console.log(`🎉 낙찰자: ${highestBidder}, 금액: ${currentBid}`);
+      console.log(`🎉 낙찰자: ${highestBidder}, 금액: ${currentBid}, 대상: ${currentItem}`);
 
       // 초기화
       currentBid = 0;
       highestBidder = null;
       bidHistory = [];
+      currentItem = null;
     }
   });
 
