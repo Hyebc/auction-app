@@ -25,11 +25,14 @@ let highestBidder = null;
 let bidHistory = [];
 let currentItem = null;
 
+let auctionResults = []; // 낙찰 목록 저장용 추가
+
 io.on('connection', (socket) => {
   console.log(`✅ 사용자 접속: ${socket.id}`);
 
   // 초기 데이터 전달
   socket.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem });
+  socket.emit('auctionResults', auctionResults); // 낙찰 목록도 함께 전송
 
   // 관리자 전용 입찰 시작 이벤트
   socket.on('startAuction', (itemName) => {
@@ -65,11 +68,20 @@ io.on('connection', (socket) => {
   // 낙찰 처리
   socket.on('declareWinner', () => {
     if (highestBidder) {
+      // 낙찰 결과 저장
+      auctionResults.push({
+        user: highestBidder,
+        item: currentItem,
+        price: currentBid,
+      });
+
       io.emit('auctionEnded', {
         winner: highestBidder,
         price: currentBid,
         itemName: currentItem,
       });
+
+      io.emit('auctionResults', auctionResults); // 낙찰 목록 갱신 전송
 
       console.log(`🎉 낙찰자: ${highestBidder}, 금액: ${currentBid}, 대상: ${currentItem}`);
 

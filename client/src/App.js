@@ -14,6 +14,9 @@ function App() {
   const [currentItem, setCurrentItem] = useState(null);
   const [itemInput, setItemInput] = useState('');
 
+  // 추가: 낙찰 목록 상태
+  const [auctionResults, setAuctionResults] = useState([]);
+
   useEffect(() => {
     socket.on('bidInit', ({ currentBid, highestBidder, bidHistory, currentItem }) => {
       setCurrentBid(currentBid);
@@ -49,12 +52,18 @@ function App() {
       setMessage('');
     });
 
+    // 추가: 낙찰 목록 수신
+    socket.on('auctionResults', (results) => {
+      setAuctionResults(results);
+    });
+
     return () => {
       socket.off('bidInit');
       socket.off('bidUpdate');
       socket.off('bidRejected');
       socket.off('auctionEnded');
       socket.off('auctionStarted');
+      socket.off('auctionResults');
     };
   }, []);
 
@@ -110,8 +119,32 @@ function App() {
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 40 }}>
-            {/* 왼쪽: 낙찰자별 입찰내역 */}
-            <div style={{ width: '40%' }}>
+            {/* 왼쪽: 낙찰 목록 */}
+            <div style={{ width: '40%', maxHeight: '80vh', overflowY: 'auto' }}>
+              <h3>🏆 낙찰 목록</h3>
+              {auctionResults.length === 0 ? (
+                <p>아직 낙찰된 아이템이 없습니다.</p>
+              ) : (
+                [...new Set(auctionResults.map(r => r.user))].map((user, idx) => {
+                  const userItems = auctionResults.filter(r => r.user === user);
+                  return (
+                    <div key={idx} style={{ marginBottom: 20 }}>
+                      <h4>{user}</h4>
+                      <ul style={{ paddingLeft: 20 }}>
+                        {userItems.map((item, i) => (
+                          <li key={i}>
+                            {item.item} - {item.price.toLocaleString()}원
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* 오른쪽: 기존 입찰 내역 및 인터페이스 */}
+            <div style={{ width: '60%' }}>
               <h3>📦 입찰 내역</h3>
               {bidHistory.length === 0 ? (
                 <p>아직 입찰이 없습니다.</p>
@@ -142,10 +175,7 @@ function App() {
                   })}
                 </div>
               )}
-            </div>
 
-            {/* 오른쪽: 경매 인터페이스 */}
-            <div style={{ width: '60%' }}>
               <h1>실시간 경매</h1>
               <p>👤 <strong>{username}</strong>님</p>
               <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
