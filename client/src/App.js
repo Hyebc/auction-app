@@ -20,13 +20,10 @@ function App() {
   const [playerIntro, setPlayerIntro] = useState('');
   const [auctionResults, setAuctionResults] = useState([]);
 
-  // 팀별 잔여 포인트 상태 (team1 ~ team11)
-  // 초기값 1000 포인트로 세팅
   const [teamPoints, setTeamPoints] = useState(
     Array(TEAM_COUNT).fill(INITIAL_POINTS)
   );
 
-  // 선수 소개 fetch
   useEffect(() => {
     if (!currentItem) {
       setPlayerIntro('');
@@ -94,6 +91,9 @@ function App() {
       setHighestBidder(null);
       setBidHistory([]);
       setMessage('');
+
+      // 🆕 실시간 경매 흐름 복구: 서버에 초기 데이터 요청
+      socket.emit('requestBidInit');
     });
 
     socket.on('auctionResults', setAuctionResults);
@@ -113,20 +113,17 @@ function App() {
     if (!bidValue || bidValue <= currentBid) return setMessage('입찰가는 현재가보다 높아야 합니다.');
     if (!username) return setMessage('닉네임을 먼저 입력하세요.');
 
-    // 팀명에서 팀번호 추출 (예: 팀3 -> 3)
     const teamNumber = parseInt(username.replace(/[^0-9]/g, ''), 10);
     if (isNaN(teamNumber) || teamNumber < 1 || teamNumber > TEAM_COUNT) {
       setMessage('유효한 팀명을 입력하세요 (예: 팀1)');
       return;
     }
 
-    // 잔여 포인트 체크
     if (teamPoints[teamNumber - 1] < bidValue) {
       setMessage('잔여 포인트가 부족합니다.');
       return;
     }
 
-    // 서버에 입찰 정보와 팀번호 함께 보냄
     socket.emit('placeBid', { bid: bidValue, user: username, teamNumber });
 
     setBidInput('');
@@ -141,6 +138,10 @@ function App() {
   const startAuction = () => {
     if (!itemInput.trim()) return;
     socket.emit('startAuction', itemInput.trim());
+
+    // 🆕 서버에 초기 상태 요청
+    socket.emit('requestBidInit');
+
     setItemInput('');
   };
 
@@ -148,14 +149,14 @@ function App() {
   const resetAuction = () => window.location.reload();
 
   const handleLogin = (id, pass) => {
-    if (id === 'admin' && pass === 'zigops_25') {
-      setUsername('admin');
-      setIsAdminVerified(true);
-      setMessage('');
-    } else {
-      setMessage('관리자 인증 실패');
-    }
-  };
+  if (id === 'admin' && pass === 'zigops_25') {
+    setUsername('admin');
+    setIsAdminVerified(true);
+    setMessage('');
+  } else {
+    setMessage('관리자 인증 실패');
+  }
+}; 
 
   if (!username) {
     return (
