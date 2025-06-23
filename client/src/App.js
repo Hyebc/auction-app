@@ -279,8 +279,7 @@ function App() {
 
         <div style={{ flex: 3 }}>
           <h3>⚡ 실시간 입찰</h3>
-          <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
-          <p>최고 입찰자: {highestBidder || '없음'}</p>
+          <p>최고 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
           <p style={{ fontWeight: 'bold' }}>카운트다운: {countdown !== null ? `${countdown}초` : '-'}</p>
 
           <div style={{ display: 'flex', gap: 5 }}>
