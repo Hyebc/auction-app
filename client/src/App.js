@@ -6,21 +6,22 @@ const socket = io('http://63.246.112.245:3000');
 function App() {
   const [username, setUsername] = useState('');
   const [nameInput, setNameInput] = useState('');
+  const [bidInput, setBidInput] = useState('');
   const [currentBid, setCurrentBid] = useState(0);
   const [highestBidder, setHighestBidder] = useState(null);
-  const [bidInput, setBidInput] = useState('');
-  const [message, setMessage] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
-  const [auctionEnded, setAuctionEnded] = useState(false);
-  const [winnerInfo, setWinnerInfo] = useState(null);
+  const [message, setMessage] = useState('');
+  const [currentItem, setCurrentItem] = useState(null);
+
+  // 관리자 전용: 입찰 대상 입력
+  const [itemInput, setItemInput] = useState('');
 
   useEffect(() => {
-    socket.on('bidInit', ({ currentBid, highestBidder, bidHistory }) => {
+    socket.on('bidInit', ({ currentBid, highestBidder, bidHistory, currentItem }) => {
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
       setBidHistory(bidHistory);
-      setAuctionEnded(false);
-      setWinnerInfo(null);
+      setCurrentItem(currentItem);
     });
 
     socket.on('bidUpdate', ({ currentBid, highestBidder, newBid }) => {
@@ -35,10 +36,19 @@ function App() {
     });
 
     socket.on('auctionEnded', ({ winner, price }) => {
-      setAuctionEnded(true);
-      setWinnerInfo({ winner, price });
-      setMessage(`경매 종료! 낙찰자: ${winner}, 낙찰가: ${price.toLocaleString()} 원`);
-      // 초기화 화면 보여주거나 추가 동작 가능
+      alert(`🎉 낙찰자: ${winner}, 금액: ${price.toLocaleString()}원`);
+      setCurrentBid(0);
+      setHighestBidder(null);
+      setBidHistory([]);
+      setCurrentItem(null);
+    });
+
+    socket.on('auctionStarted', ({ itemName }) => {
+      setCurrentItem(itemName);
+      setCurrentBid(0);
+      setHighestBidder(null);
+      setBidHistory([]);
+      setMessage('');
     });
 
     return () => {
@@ -46,6 +56,7 @@ function App() {
       socket.off('bidUpdate');
       socket.off('bidRejected');
       socket.off('auctionEnded');
+      socket.off('auctionStarted');
     };
   }, []);
 
@@ -59,10 +70,6 @@ function App() {
       setMessage('닉네임을 먼저 입력하세요.');
       return;
     }
-    if (auctionEnded) {
-      setMessage('경매가 종료되었습니다.');
-      return;
-    }
 
     socket.emit('placeBid', { bid: bidValue, user: username });
     setBidInput('');
@@ -72,8 +79,14 @@ function App() {
     socket.emit('declareWinner');
   };
 
+  const startAuction = () => {
+    if (itemInput.trim() === '') return;
+    socket.emit('startAuction', itemInput.trim());
+    setItemInput('');
+  };
+
   return (
-    <div style={{ maxWidth: 500, margin: '50px auto', textAlign: 'center', fontFamily: 'Arial' }}>
+    <div style={{ maxWidth: 600, margin: '50px auto', textAlign: 'center', fontFamily: 'Arial' }}>
       {!username ? (
         <div>
           <h2>사용자 이름을 입력하세요</h2>
@@ -85,7 +98,7 @@ function App() {
             style={{ padding: 8, width: '60%', fontSize: 16 }}
           />
           <button
-            onClick={() => setUsername(nameInput.trim())}
+            onClick={() => setUsername(nameInput)}
             style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
           >
             확인
@@ -94,9 +107,10 @@ function App() {
       ) : (
         <>
           <h1>실시간 경매</h1>
-          <p>안녕하세요, <strong>{username}</strong>님!</p>
-          <p>현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
-          <p>최고 입찰자: {highestBidder || '없음'}</p>
+          <p>👤 <strong>{username}</strong>님</p>
+          {currentItem && <h2>🎯 현재 입찰 대상: {currentItem}</h2>}
+          <p>💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong></p>
+          <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
 
           <input
             type="number"
@@ -104,38 +118,44 @@ function App() {
             onChange={(e) => setBidInput(e.target.value)}
             placeholder="입찰가 입력"
             style={{ padding: 8, width: '60%', fontSize: 16 }}
-            disabled={auctionEnded}
           />
           <button
             onClick={placeBid}
             style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
-            disabled={auctionEnded}
           >
             입찰하기
           </button>
 
-          {/* 관리자만 낙찰 버튼 노출 */}
-          {username.toLowerCase() === 'admin' && !auctionEnded && (
-            <div style={{ marginTop: 20 }}>
+          <br /><br />
+          {username === 'admin' && (
+            <>
+              <input
+                type="text"
+                value={itemInput}
+                onChange={(e) => setItemInput(e.target.value)}
+                placeholder="입찰 대상 입력"
+                style={{ padding: 8, width: '60%', fontSize: 16 }}
+              />
+              <button
+                onClick={startAuction}
+                style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+              >
+                입찰 시작
+              </button>
+              <br /><br />
               <button
                 onClick={declareWinner}
-                style={{ padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', background: '#222', color: 'white', fontSize: 16 }}
               >
-                낙찰 처리하기
+                🏁 낙찰 처리
               </button>
-            </div>
+            </>
           )}
 
-          {message && <p style={{ color: auctionEnded ? 'green' : 'red' }}>{message}</p>}
-
-          {auctionEnded && winnerInfo && (
-            <p style={{ color: 'blue', fontWeight: 'bold' }}>
-              🎉 경매가 종료되었습니다! 낙찰자: {winnerInfo.winner}, 낙찰가: {winnerInfo.price.toLocaleString()} 원
-            </p>
-          )}
+          {message && <p style={{ color: 'red' }}>{message}</p>}
 
           <h3>입찰 내역</h3>
-          <ul style={{ textAlign: 'left', padding: 0, listStyle: 'none', maxHeight: 200, overflowY: 'auto' }}>
+          <ul style={{ textAlign: 'left', padding: 0, listStyle: 'none' }}>
             {bidHistory.map((entry, idx) => (
               <li key={idx} style={{ borderBottom: '1px solid #ccc', padding: '4px 0' }}>
                 {entry.time} - <strong>{entry.user}</strong>님이 {entry.bid.toLocaleString()}원 입찰
