@@ -30,19 +30,26 @@ function App() {
 
   // 구글 시트에서 선수 목록 로드 (관리자용)
   useEffect(() => {
-  if (!currentItem) {
-    setPlayerIntro('');
-    return;
-  }
-
   fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
     .then(res => res.text())
     .then(text => {
       try {
         const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows.slice(2, 57); // 실제 선수 데이터 영역 (3~57행)
+        const rows = json.table.rows.slice(2, 57); // 실제 선수 데이터 영역
 
-        // F열(인덱스 5)이 선수 이름
+        // 선수 이름 목록 추출
+        const names = rows
+          .map(r => r.c[5]?.v)  // F열(인덱스 5)이 선수 이름
+          .filter(Boolean);
+
+        setPlayerOptions(names);
+
+        if (!currentItem) {
+          setPlayerIntro('');
+          return;
+        }
+
+        // 현재 선택된 선수 소개 처리 (기존 로직)
         const row = rows.find(r => r.c[5]?.v === currentItem);
 
         if (!row) {
@@ -50,13 +57,11 @@ function App() {
           return;
         }
 
-        const mainPos = row.c[9]?.v || '-';          // J열: 주 포지션
-        const subPos = row.c[10]?.v || '-';          // K열: 부 포지션
-        // L~N열: 주력 챔피언 3개, 값이 있을 경우만 콤마로 연결
+        const mainPos = row.c[9]?.v || '-';
+        const subPos = row.c[10]?.v || '-';
         const champs = [row.c[11]?.v, row.c[12]?.v, row.c[13]?.v].filter(Boolean).join(', ') || '-';
-        const message = row.c[14]?.v || '등록된 참가자 소개글이 없습니다.'; // O열: 참가자의 말
+        const message = row.c[14]?.v || '등록된 참가자 소개글이 없습니다.';
 
-        // 줄바꿈 문자 \n을 그대로 넣고, JSX에서 white-space: pre-line 스타일로 줄바꿈 처리 가능
         const formattedIntro = 
           `🧭 주 포지션: ${mainPos}\n` +
           `🎯 부 포지션: ${subPos}\n` +
@@ -64,6 +69,7 @@ function App() {
           `💬 참가자의 말:\n${message}`;
 
         setPlayerIntro(formattedIntro);
+
       } catch (error) {
         console.error('JSON 파싱 오류:', error);
         setPlayerIntro('소개글을 불러오는 데 실패했습니다.');
