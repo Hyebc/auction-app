@@ -163,9 +163,13 @@ function App() {
             <AdminLogin onAdminLogin={handleLogin} message={message} />
           </div>
         </div>
+      
+          {/* 하단 문구 */}
+          <div style={{ fontSize: 14, color: '#777', marginTop: 30 }}>
+          Created by Been.</div>
       </div>
     );
-  }
+   }
 
   // 로그인 후 메인 화면
   return (
