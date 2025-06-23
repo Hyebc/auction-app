@@ -132,30 +132,32 @@ function App() {
     }
   };
 
+  // 로그인 전 화면
   if (!username) {
     return (
       <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Nanum Square', sans-serif" }}>
         <h2>멸망전 경매 로그인</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 30 }}>
+          {/* 팀장 로그인 영역 */}
           <div style={{ flex: 1, maxWidth: 250 }}>
             <h3>팀장명</h3>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input
-                type="text"
-                placeholder="팀장명 입력 (예: 팀1)"
-                value={loginInput}
-                onChange={e => setLoginInput(e.target.value)}
-                style={{ flex: 1, padding: 10 }}
-              />
-              <button
-                onClick={() => setUsername(loginInput.trim())}
-                disabled={!loginInput.trim()}
-                style={{ flex: 1, padding: 10 }}
-              >
-                로그인
-              </button>
-            </div>
+            <input
+              type="text"
+              placeholder="팀장명 입력 (예: 팀1)"
+              value={loginInput}
+              onChange={e => setLoginInput(e.target.value)}
+              style={{ width: '100%', padding: 10, boxSizing: 'border-box' }}
+            />
+            <button
+              onClick={() => setUsername(loginInput.trim())}
+              disabled={!loginInput.trim()}
+              style={{ marginTop: 10, width: '100%', padding: 10 }}
+            >
+              로그인
+            </button>
           </div>
+
+          {/* 관리자 로그인 영역 */}
           <div style={{ flex: 1, maxWidth: 250 }}>
             <h3>관리자 로그인</h3>
             <AdminLogin onAdminLogin={handleLogin} message={message} />
@@ -165,6 +167,7 @@ function App() {
     );
   }
 
+  // 로그인 후 메인 화면
   return (
     <div style={{ display: 'flex', fontFamily: "'Nanum Square', sans-serif", padding: 20, gap: 20, height: '100vh' }}>
       <div style={{ flex: 1.5, minWidth: 300, overflowY: 'auto' }}>
@@ -272,7 +275,10 @@ function App() {
               />
               <button onClick={startAuction}>입찰 시작</button>
               <button onClick={declareWinner}>낙찰 처리</button>
-              <button onClick={resetAuction} style={{ backgroundColor: '#f33', color: 'white' }}>
+              <button
+                onClick={resetAuction}
+                style={{ backgroundColor: '#f33', color: 'white' }}
+              >
                 경매 초기화
               </button>
             </>
@@ -318,14 +324,14 @@ function AdminLogin({ onAdminLogin, message }) {
         placeholder="관리자 ID"
         value={adminId}
         onChange={e => setAdminId(e.target.value)}
-        style={{ width: '100%', padding: 10, marginBottom: 12 }}
+        style={{ width: '100%', padding: 10, marginBottom: 12, boxSizing: 'border-box' }}
       />
       <input
         type="password"
         placeholder="비밀번호"
         value={adminPass}
         onChange={e => setAdminPass(e.target.value)}
-        style={{ width: '100%', padding: 10, marginBottom: 20 }}
+        style={{ width: '100%', padding: 10, marginBottom: 20, boxSizing: 'border-box' }}
       />
       <button
         onClick={() => onAdminLogin(adminId, adminPass)}
