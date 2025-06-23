@@ -160,6 +160,9 @@ function App() {
   const [currentItem, setCurrentItem] = useState(null);
   const [itemInput, setItemInput] = useState('');
 
+  // **서버에서 내려주는 낙찰 결과 목록 상태**
+  const [auctionResults, setAuctionResults] = useState([]);
+
   useEffect(() => {
     socket.on('bidInit', ({ currentBid, highestBidder, bidHistory, currentItem }) => {
       setCurrentBid(currentBid);
@@ -180,7 +183,7 @@ function App() {
     });
 
     socket.on('auctionEnded', ({ winner, price }) => {
-      alert(`🎉 낙찰자: ${winner}, 금액: ${price.toLocaleString()}원`);
+      alert(`🎉 낙찰자: ${winner}, 금액: ${price.toLocaleString()}포인트`);
       setCurrentBid(0);
       setHighestBidder(null);
       setBidHistory([]);
@@ -195,29 +198,20 @@ function App() {
       setMessage('');
     });
 
+    // 서버에서 낙찰 결과를 받을 때 상태 갱신
+    socket.on('auctionResults', (results) => {
+      setAuctionResults(results);
+    });
+
     return () => {
       socket.off('bidInit');
       socket.off('bidUpdate');
       socket.off('bidRejected');
       socket.off('auctionEnded');
       socket.off('auctionStarted');
+      socket.off('auctionResults');
     };
   }, []);
-
-  // 입찰자별 최고 입찰 금액 계산
-  const winnerByUser = bidHistory.reduce((acc, bid) => {
-    if (!acc[bid.user] || acc[bid.user] < bid.bid) acc[bid.user] = bid.bid;
-    return acc;
-  }, {});
-
-  const winnersList = Object.entries(winnerByUser).map(([user, bid]) => ({
-    user,
-    bid,
-  }));
-
-  // 낙찰자 아이콘 (임시)
-  const sampleIconUrl =
-    'https://cdn-icons-png.flaticon.com/512/147/147144.png';
 
   const placeBid = () => {
     const bidValue = Number(bidInput);
@@ -273,147 +267,201 @@ function App() {
     );
   }
 
-  return (
-    <div style={{ maxWidth: 1200, margin: '20px auto', fontFamily: 'Arial' }}>
-      {currentItem && (
-        <h2 style={{ textAlign: 'center', fontSize: 28, marginBottom: 30 }}>
-          🎯 현재 입찰 대상: <span style={{ color: '#007bff' }}>{currentItem}</span>
-        </h2>
-      )}
+  const sampleIconUrl = 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 40 }}>
-        {/* 좌측 낙찰 목록 카드 UI */}
-        <div
-          style={{
-            width: '40%',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          <h3>🏆 낙찰 목록</h3>
-          {winnersList.length === 0 ? (
-            <p>아직 낙찰된 내역이 없습니다.</p>
-          ) : (
-            winnersList.map(({ user, bid }, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: 12,
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: 8,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                }}
-              >
-                <img
-                  src={sampleIconUrl}
-                  alt="user icon"
+  return (
+    <>
+      <div style={{ maxWidth: 1200, margin: '20px auto', fontFamily: 'Arial', paddingBottom: 100 }}>
+        {currentItem && (
+          <h2 style={{ textAlign: 'center', fontSize: 28, marginBottom: 30 }}>
+            🎯 현재 입찰 대상: <span style={{ color: '#007bff' }}>{currentItem}</span>
+          </h2>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 40 }}>
+          {/* 좌측 낙찰 목록 카드 UI */}
+          <div
+            style={{
+              width: '40%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <h3>🏆 낙찰 목록</h3>
+            {auctionResults.length === 0 ? (
+              <p>아직 낙찰된 내역이 없습니다.</p>
+            ) : (
+              auctionResults.map(({ user, price, item }, idx) => (
+                <div
+                  key={idx}
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    marginRight: 16,
-                    objectFit: 'cover',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 12,
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: 8,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   }}
-                />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: 18 }}>{user}</div>
-                  <div style={{ fontSize: 16, color: '#444' }}>
-                    낙찰 금액: <strong>{bid.toLocaleString()} 원</strong>
+                >
+                  <img
+                    src={sampleIconUrl}
+                    alt="user icon"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      marginRight: 16,
+                      objectFit: 'cover',
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: 18 }}>{user}</div>
+                    <div style={{ fontSize: 16, color: '#444' }}>
+                      참가자: <strong>{item}</strong>
+                    </div>
+                    <div style={{ fontSize: 16, color: '#444' }}>
+                      낙찰 금액: <strong>{price.toLocaleString()} 포인트</strong>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
 
-        {/* 우측 기존 입찰 UI */}
-        <div style={{ width: '60%' }}>
-          <h1>실시간 경매</h1>
-          <p>
-            👤 <strong>{username}</strong>님
-          </p>
-          <p>
-            💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 원</strong>
-          </p>
-          <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
+          {/* 우측 기존 입찰 UI */}
+          <div style={{ width: '60%' }}>
+            <h1>실시간 경매</h1>
+            <p>
+              👤 <strong>{username}</strong>님
+            </p>
+            <p>
+              💰 현재 입찰가: <strong>{currentBid.toLocaleString()} 포인트</strong>
+            </p>
+            <p>👑 최고 입찰자: {highestBidder || '없음'}</p>
 
-          {/* 일반 사용자 UI */}
-          {!isAdminVerified && (
-            <>
-              <input
-                type="number"
-                value={bidInput}
-                onChange={(e) => setBidInput(e.target.value)}
-                placeholder="입찰가 입력"
-                style={{ padding: 8, width: '60%', fontSize: 16 }}
-              />
-              <button
-                onClick={placeBid}
-                style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
-              >
-                입찰하기
-              </button>
-            </>
-          )}
+            {/* 일반 사용자 UI */}
+            {!isAdminVerified && (
+              <>
+                <input
+                  type="number"
+                  value={bidInput}
+                  onChange={(e) => setBidInput(e.target.value)}
+                  placeholder="입찰가 입력"
+                  style={{ padding: 8, width: '60%', fontSize: 16 }}
+                />
+                <button
+                  onClick={placeBid}
+                  style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+                >
+                  입찰하기
+                </button>
+              </>
+            )}
 
-          {/* 관리자 UI */}
-          {isAdminVerified && (
-            <>
-              <br />
-              <input
-                type="text"
-                value={itemInput}
-                onChange={(e) => setItemInput(e.target.value)}
-                placeholder="입찰 대상 입력"
-                style={{ padding: 8, width: '60%', fontSize: 16 }}
-              />
-              <button
-                onClick={startAuction}
-                style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
-              >
-                입찰 시작
-              </button>
+            {/* 관리자 UI */}
+            {isAdminVerified && (
+              <>
+                <br />
+                <input
+                  type="text"
+                  value={itemInput}
+                  onChange={(e) => setItemInput(e.target.value)}
+                  placeholder="입찰 대상 입력"
+                  style={{ padding: 8, width: '60%', fontSize: 16 }}
+                />
+                <button
+                  onClick={startAuction}
+                  style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16 }}
+                >
+                  입찰 시작
+                </button>
 
-              <br />
-              <br />
-              <button
-                onClick={declareWinner}
-                style={{
-                  padding: '8px 16px',
-                  background: '#222',
-                  color: 'white',
-                  fontSize: 16,
-                }}
-              >
-                🏁 낙찰 처리
-              </button>
+                <br />
+                <br />
+                <button
+                  onClick={declareWinner}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#222',
+                    color: 'white',
+                    fontSize: 16,
+                  }}
+                >
+                  🏁 낙찰 처리
+                </button>
 
-              <br />
-              <br />
-              <button
-                onClick={resetAuction}
-                style={{
-                  padding: '8px 16px',
-                  background: '#d33',
-                  color: 'white',
-                  fontSize: 16,
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                초기화 (경매 리셋)
-              </button>
-            </>
-          )}
+                <br />
+                <br />
+                <button
+                  onClick={resetAuction}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#d33',
+                    color: 'white',
+                    fontSize: 16,
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                  }}
+                >
+                  초기화 (경매 리셋)
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 하단 고정 낙찰 현황 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#222',
+          color: 'white',
+          display: 'flex',
+          overflowX: 'auto',
+          padding: '10px 20px',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.4)',
+          zIndex: 9999,
+          gap: 20,
+          alignItems: 'center',
+          fontFamily: 'Arial, sans-serif',
+        }}
+      >
+        {auctionResults.length === 0 ? (
+          <div>아직 낙찰된 내역이 없습니다.</div>
+        ) : (
+          auctionResults.map(({ user, price, item }, idx) => (
+            <div
+              key={idx}
+              style={{
+                whiteSpace: 'nowrap',
+                padding: '6px 12px',
+                backgroundColor: '#007bff',
+                borderRadius: 6,
+                fontWeight: 'bold',
+                fontSize: 16,
+                boxShadow: '0 0 8px rgba(0,123,255,0.7)',
+                minWidth: 150,
+                textAlign: 'center',
+                userSelect: 'none',
+              }}
+              title={`${user}님의 낙찰 금액: ${price.toLocaleString()} 포인트, 참가자: ${item}`}
+            >
+              {user} <br />
+              <span style={{ fontSize: 14 }}>{item}</span> <br />
+              <span style={{ fontSize: 18 }}>{price.toLocaleString()} 포인트</span>
+            </div>
+          ))
+        )}
+      </div>
+    </>
   );
 }
 
