@@ -102,20 +102,28 @@ function App() {
     socket.on('bidRejected', ({ message }) => setMessage(message));
 
     socket.on('auctionEnded', ({ winner, price, itemName, teamPoints: serverTeamPoints }) => {
-      alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price.toLocaleString()} 포인트`);
-      setCurrentBid(0);
-      setHighestBidder(null);
-      setBidHistory([]);
-      setVisibleBidHistory([]);
-      setCurrentItem(null);
-      setPlayerIntro('');
-      if (Array.isArray(serverTeamPoints)) setTeamPoints(serverTeamPoints);
-      setPlayerOptions(prev => prev.filter(item => item !== itemName));
-      setChanceUsed(Array(TEAM_COUNT).fill(false));
-      setChanceActive(false);
-      setCountdown(null);
-      clearInterval(countdownInterval.current);
-    });
+  alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price.toLocaleString()} 포인트`);
+  const match = winner.match(/팀(\d+)/);
+  const winningTeam = match ? parseInt(match[1], 10) : null;
+
+  const updated = Array(TEAM_COUNT).fill(false);
+  if (winningTeam && winningTeam >= 1 && winningTeam <= TEAM_COUNT) {
+    updated[winningTeam - 1] = true;
+  }
+  setChanceUsed(updated); // 낙찰된 팀만 true
+
+  setCurrentBid(0);
+  setHighestBidder(null);
+  setBidHistory([]);
+  setVisibleBidHistory([]);
+  setCurrentItem(null);
+  setPlayerIntro('');
+  if (Array.isArray(serverTeamPoints)) setTeamPoints(serverTeamPoints);
+  setPlayerOptions(prev => prev.filter(item => item !== itemName));
+  setChanceActive(false);
+  setCountdown(null);
+  clearInterval(countdownInterval.current);
+});
 
     socket.on('auctionStarted', ({ itemName }) => {
       setCurrentItem(itemName);
