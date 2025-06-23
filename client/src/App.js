@@ -172,37 +172,79 @@ function App() {
             const teamUserPrefix = `팀${idx + 1}`;
             const teamResults = auctionResults.filter(r => r.user.startsWith(teamUserPrefix));
             return (
-              <div key={idx} style={{ border: '1px solid #ccc', borderRadius: 6, padding: 10, backgroundColor: '#fafafa' }}>
-                <div style={{
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  fontWeight: 'bold',
-                  marginBottom: 8,
-                  textAlign: 'center',
-                }}>
-                  팀{idx + 1} ({points.toLocaleString()}P)
+              <div
+                key={idx}
+                style={{
+                  borderRadius: 12,
+                  backgroundColor: '#ffffffcc',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  padding: '16px',
+                  backdropFilter: 'blur(6px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  transition: 'transform 0.2s ease',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#333',
+                    backgroundColor: '#e8f0fe',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}
+                >
+                  팀 {idx + 1} | 💰 {points.toLocaleString()} P
                 </div>
-                {teamResults.length === 0 ? (
-                  <div>낙찰 선수 없음</div>
-                ) : (
-                  <ul style={{ margin: 0, paddingLeft: 20 }}>
-                    {teamResults.map((r, i) => (
-                      <li key={i}><strong>{r.item}</strong> - {r.price.toLocaleString()}P</li>
-                    ))}
-                  </ul>
-                )}
+
+                <div style={{ padding: '6px 12px' }}>
+                  {teamResults.length === 0 ? (
+                    <div style={{ color: '#999', fontStyle: 'italic' }}>낙찰 선수 없음</div>
+                  ) : (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {teamResults.map((r, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '4px 0',
+                            borderBottom: '1px dashed #ddd',
+                            fontWeight: '500',
+                          }}
+                        >
+                          <span>{r.item}</span>
+                          <span style={{ fontWeight: '600' }}>{r.price.toLocaleString()}P</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 20, height: '100%', overflow: 'hidden' }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 320,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
         <div style={{ flexShrink: 0 }}>
           <h3>⚡ 실시간 입찰</h3>
-          <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
+          <p>
+            현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
+          </p>
           <p>최고 입찰자: {highestBidder || '없음'}</p>
           {!isAdminVerified ? (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -238,7 +280,10 @@ function App() {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <h3>🎯 입찰 선수 소개</h3>
           {currentItem ? (
-            <div><strong>{currentItem}</strong><p style={{ whiteSpace: 'pre-line', fontSize: 14 }}>{playerIntro}</p></div>
+            <div>
+              <strong>{currentItem}</strong>
+              <p style={{ whiteSpace: 'pre-line', fontSize: 14 }}>{playerIntro}</p>
+            </div>
           ) : (
             <p>입찰 대상이 없습니다.</p>
           )}
@@ -248,7 +293,9 @@ function App() {
               <p>입찰 기록 없음</p>
             ) : (
               bidHistory.map((b, i) => (
-                <div key={i}>{b.time} - {b.user}: {b.bid.toLocaleString()}P</div>
+                <div key={i}>
+                  {b.time} - {b.user}: {b.bid.toLocaleString()}P
+                </div>
               ))
             )}
           </div>
@@ -286,7 +333,7 @@ function AdminLogin({ onAdminLogin, message }) {
           padding: 12,
           backgroundColor: adminId.trim() && adminPass.trim() ? '#d9534f' : '#ccc',
           color: 'white',
-          border: 'none'
+          border: 'none',
         }}
       >
         관리자 로그인
