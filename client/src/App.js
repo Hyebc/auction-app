@@ -42,6 +42,7 @@ function App() {
           .map(r => r.c[5]?.v)  // F열(인덱스 5)이 선수 이름
           .filter(Boolean);
         const soldOutPlayers = auctionResults.map(r => r.item);
+        
         const availablePlayers = names.filter(name => !soldOutPlayers.includes(name));
 
         setPlayerOptions(availablePlayers);
@@ -78,7 +79,7 @@ function App() {
       }
     })
     .catch(() => setPlayerIntro('소개글을 불러오는 데 실패했습니다.'));
-}, [currentItem]);
+}, [currentItem, auctionResults]);
 
   // 소켓 이벤트 등록
   useEffect(() => {
