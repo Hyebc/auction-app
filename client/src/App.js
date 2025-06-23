@@ -25,12 +25,12 @@ function App() {
   const [playerOptions, setPlayerOptions] = useState([]);
 
   useEffect(() => {
-    fetch('https://docs.google.com/spreadsheets/d/1drXfs4FJSbgh_OVzMnE2_2nuOkTJNnO8domunPmCgrA/gviz/tq?tqx=out:json')
+    fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
       .then(res => res.text())
       .then(text => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const options = rows.map(r => r.c[0]?.v).filter(Boolean);
+        const rows = json.table.rows.slice(2, 57); // F3:F57 corresponds to rows index 2 to 56 (0-based)
+        const options = rows.map(r => r.c[5]?.v).filter(Boolean);
         setPlayerOptions(options);
       });
   }, []);
@@ -40,13 +40,13 @@ function App() {
       setPlayerIntro('');
       return;
     }
-    fetch('https://docs.google.com/spreadsheets/d/1drXfs4FJSbgh_OVzMnE2_2nuOkTJNnO8domunPmCgrA/gviz/tq?tqx=out:json')
+    fetch('https://docs.google.com/spreadsheets/d/1ZF0tki5AtPbwA3FR2nUjKvQqsh3-Rzgi72jFP0UcsZA/gviz/tq?tqx=out:json')
       .then(res => res.text())
       .then(text => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const row = rows.find(r => r.c[0]?.v === currentItem);
-        setPlayerIntro(row?.c[1]?.v || '등록된 소개글이 없습니다.');
+        const rows = json.table.rows.slice(2, 57);
+        const row = rows.find(r => r.c[5]?.v === currentItem);
+        setPlayerIntro(row?.c[14]?.v || '등록된 소개글이 없습니다.'); // O열 (index 14) is intro
       })
       .catch(() => setPlayerIntro('소개글을 불러오는 데 실패했습니다.'));
   }, [currentItem]);
@@ -165,8 +165,8 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', fontFamily: 'Nanum Square', padding: 20, gap: 10 }}>
-      <div style={{ flex: '1 1 350px', maxWidth: 400 }}>
+    <div style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20 }}>
+      <div style={{ flex: 7 }}>
         <h3>🏆 팀별 낙찰 현황</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {teamPoints.map((points, idx) => {
@@ -193,7 +193,7 @@ function App() {
         </div>
       </div>
 
-      <div style={{ flex: '2 1 500px', minWidth: 300 }}>
+      <div style={{ flex: 3 }}>
         <h3>⚡ 실시간 입찰</h3>
         <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
         <p>최고 입찰자: {highestBidder || '없음'}</p>
@@ -204,8 +204,11 @@ function App() {
               <button onClick={placeBid}>입찰</button>
             </div>
             <div>
-              <button onClick={() => setChanceActive(true)} disabled={chanceUsed[parseInt(username.replace(/[^0-9]/g, ''), 10) - 1]}>
-                찬스권 사용
+              <button
+                onClick={() => setChanceActive(prev => !prev)}
+                disabled={chanceUsed[parseInt(username.replace(/[^0-9]/g, ''), 10) - 1]}
+              >
+                {chanceActive ? '찬스권 취소' : '찬스권 사용'}
               </button>
               {chanceActive && <span style={{ color: 'red', marginLeft: 8 }}>🃏 찬스권 활성화됨</span>}
             </div>
