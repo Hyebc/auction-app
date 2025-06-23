@@ -4,18 +4,14 @@ import { io } from 'socket.io-client';
 const socket = io('http://63.246.112.245:3000');
 
 function App() {
-  // 사용자 정보
   const [username, setUsername] = useState('');
   const [nameInput, setNameInput] = useState('');
-
-  // 입찰 관련 상태
   const [currentBid, setCurrentBid] = useState(0);
   const [highestBidder, setHighestBidder] = useState(null);
   const [bidInput, setBidInput] = useState('');
   const [message, setMessage] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
 
-  // 서버와 연결 후 초기 데이터 수신
   useEffect(() => {
     socket.on('bidInit', ({ currentBid, highestBidder, bidHistory }) => {
       setCurrentBid(currentBid);
@@ -34,10 +30,19 @@ function App() {
       setMessage(message);
     });
 
+    // 🏁 낙찰 처리 수신
+    socket.on('auctionEnded', ({ winner, price }) => {
+      setMessage(`🎉 ${winner}님이 ${price.toLocaleString()}원에 낙찰되었습니다.`);
+      setCurrentBid(0);
+      setHighestBidder(null);
+      setBidHistory([]);
+    });
+
     return () => {
       socket.off('bidInit');
       socket.off('bidUpdate');
       socket.off('bidRejected');
+      socket.off('auctionEnded');
     };
   }, []);
 
@@ -54,6 +59,10 @@ function App() {
 
     socket.emit('placeBid', { bid: bidValue, user: username });
     setBidInput('');
+  };
+
+  const declareWinner = () => {
+    socket.emit('declareWinner');
   };
 
   return (
@@ -96,7 +105,15 @@ function App() {
             입찰하기
           </button>
 
-          {message && <p style={{ color: 'red' }}>{message}</p>}
+          {/* 🏁 낙찰 버튼 */}
+          <button
+            onClick={declareWinner}
+            style={{ padding: '8px 16px', marginLeft: 8, fontSize: 16, background: '#28a745', color: 'white', border: 'none' }}
+          >
+            낙찰하기
+          </button>
+
+          {message && <p style={{ color: 'red', marginTop: 16 }}>{message}</p>}
 
           <h3>입찰 내역</h3>
           <ul style={{ textAlign: 'left', padding: 0, listStyle: 'none' }}>
