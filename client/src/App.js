@@ -7,7 +7,9 @@ const TEAM_COUNT = 11;
 const INITIAL_POINTS = 1000;
 
 function App() {
+  // 로그인 입력 분리
   const [username, setUsername] = useState('');
+  const [loginInput, setLoginInput] = useState(''); // 입력 상태 따로 관리
   const [isAdminVerified, setIsAdminVerified] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -149,14 +151,14 @@ function App() {
   const resetAuction = () => window.location.reload();
 
   const handleLogin = (id, pass) => {
-  if (id === 'admin' && pass === 'zigops_25') {
-    setUsername('admin');
-    setIsAdminVerified(true);
-    setMessage('');
-  } else {
-    setMessage('관리자 인증 실패');
-  }
-}; 
+    if (id === 'admin' && pass === 'zigops_25') {
+      setUsername('admin');
+      setIsAdminVerified(true);
+      setMessage('');
+    } else {
+      setMessage('관리자 인증 실패');
+    }
+  };
 
   if (!username) {
     return (
@@ -164,26 +166,28 @@ function App() {
         <h2>멸망전 경매 로그인</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 30 }}>
           <div style={{ flex: 1, maxWidth: 250 }}>
-            <h3>팀장명 (팀1 ~ 팀11)</h3>
+            {/* 팀1~팀11 텍스트 제거 */}
+            <h3>팀장명</h3>
             <input
               type="text"
               placeholder="팀장명 입력 (예: 팀1)"
-              onChange={e => setUsername(e.target.value)}
+              value={loginInput} // 바인딩된 입력값 사용
+              onChange={e => setLoginInput(e.target.value)}
               style={{ width: '100%', padding: 10, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
             />
             <button
-              onClick={() => setUsername(username.trim())}
-              disabled={!username.trim()}
+              onClick={() => setUsername(loginInput.trim())} // 버튼 누를 때 로그인
+              disabled={!loginInput.trim()}
               style={{
                 marginTop: 15,
                 width: '100%',
                 padding: 10,
                 fontSize: 16,
                 borderRadius: 4,
-                backgroundColor: username.trim() ? '#007bff' : '#ccc',
+                backgroundColor: loginInput.trim() ? '#007bff' : '#ccc',
                 color: 'white',
                 border: 'none',
-                cursor: username.trim() ? 'pointer' : 'not-allowed',
+                cursor: loginInput.trim() ? 'pointer' : 'not-allowed',
               }}
             >
               로그인
@@ -236,14 +240,19 @@ function App() {
                   }}
                   title={`팀${idx + 1} 잔여 포인트`}
                 >
-                  팀{idx + 1}<br />
+                  팀{idx + 1}
+                  <br />
                   {points.toLocaleString()}P
                 </div>
 
                 {/* 낙찰 선수 및 금액 */}
                 <div style={{ flex: 1 }}>
-                  <div><strong>낙찰 선수:</strong> {teamResult ? teamResult.item : '없음'}</div>
-                  <div><strong>금액:</strong> {teamResult ? teamResult.price.toLocaleString() + 'P' : '-'}</div>
+                  <div>
+                    <strong>낙찰 선수:</strong> {teamResult ? teamResult.item : '없음'}
+                  </div>
+                  <div>
+                    <strong>금액:</strong> {teamResult ? teamResult.price.toLocaleString() + 'P' : '-'}
+                  </div>
                 </div>
               </div>
             );
@@ -280,31 +289,21 @@ function App() {
       {/* 우측: 실시간 입찰 UI */}
       <div style={{ flex: 1, minWidth: 280 }}>
         <h3>⚡ 실시간 입찰</h3>
-        <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
+        <p>
+          현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
+        </p>
         <p>최고 입찰자: {highestBidder || '없음'}</p>
 
         {!isAdminVerified ? (
           <>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <button
-                onClick={() => increaseBid(10)}
-                style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }}
-                type="button"
-              >
+              <button onClick={() => increaseBid(10)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }} type="button">
                 +10
               </button>
-              <button
-                onClick={() => increaseBid(50)}
-                style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }}
-                type="button"
-              >
+              <button onClick={() => increaseBid(50)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 50 }} type="button">
                 +50
               </button>
-              <button
-                onClick={() => increaseBid(100)}
-                style={{ padding: '6px 12px', fontSize: 14, minWidth: 60 }}
-                type="button"
-              >
+              <button onClick={() => increaseBid(100)} style={{ padding: '6px 12px', fontSize: 14, minWidth: 60 }} type="button">
                 +100
               </button>
 
@@ -315,10 +314,7 @@ function App() {
                 placeholder="입찰가"
                 style={{ padding: 8, width: '60%', marginLeft: 10 }}
               />
-              <button
-                onClick={placeBid}
-                style={{ padding: '8px 16px', marginLeft: 10, fontSize: 16 }}
-              >
+              <button onClick={placeBid} style={{ padding: '8px 16px', marginLeft: 10, fontSize: 16 }}>
                 입찰
               </button>
             </div>
@@ -331,12 +327,13 @@ function App() {
               placeholder="입찰 선수 ID"
               style={{ padding: 8, width: '80%', marginTop: 10 }}
             />
-            <button onClick={startAuction} style={{ marginTop: 10, padding: 8 }}>입찰 시작</button>
-            <button onClick={declareWinner} style={{ marginTop: 10, padding: 8 }}>낙찰 처리</button>
-            <button
-              onClick={resetAuction}
-              style={{ marginTop: 10, padding: 8, backgroundColor: '#f33', color: 'white' }}
-            >
+            <button onClick={startAuction} style={{ marginTop: 10, padding: 8 }}>
+              입찰 시작
+            </button>
+            <button onClick={declareWinner} style={{ marginTop: 10, padding: 8 }}>
+              낙찰 처리
+            </button>
+            <button onClick={resetAuction} style={{ marginTop: 10, padding: 8, backgroundColor: '#f33', color: 'white' }}>
               경매 초기화
             </button>
           </>
@@ -348,8 +345,8 @@ function App() {
 
 // 관리자 로그인 컴포넌트 분리
 function AdminLogin({ onAdminLogin, message }) {
-  const [adminId, setAdminId] = useState('');
-  const [adminPass, setAdminPass] = useState('');
+  const [adminId, setAdminId] = React.useState('');
+  const [adminPass, setAdminPass] = React.useState('');
 
   return (
     <div style={{ textAlign: 'center' }}>
