@@ -17,6 +17,10 @@ function App() {
   const [playerIntro, setPlayerIntro] = useState('');
   const [auctionResults, setAuctionResults] = useState([]);
 
+  // 로그인 관련 상태 (관리자 아이디/비번 입력용)
+  const [adminId, setAdminId] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+
   // 선수 소개 fetch
   useEffect(() => {
     if (!currentItem) {
@@ -104,55 +108,161 @@ function App() {
   const declareWinner = () => socket.emit('declareWinner');
   const resetAuction = () => window.location.reload();
 
-  const handleLogin = (id, pass) => {
-    if (id === 'admin' && pass === 'zigops_25') {
+  const handleAdminLogin = () => {
+    if (adminId === 'admin' && adminPass === 'zigops_25') {
       setUsername('admin');
       setIsAdminVerified(true);
+      setMessage('');
     } else {
       setMessage('관리자 인증 실패');
     }
   };
 
+  const handleUserLogin = () => {
+    if (!username.trim()) {
+      setMessage('닉네임을 입력하세요.');
+      return;
+    }
+    setIsAdminVerified(false);
+    setMessage('');
+  };
+
   if (!username) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Arial' }}>
-        <h2>멸망전 경매 로그인</h2>
-        <input
-          placeholder="닉네임"
-          onChange={e => setUsername(e.target.value)}
-          style={{ padding: 10, margin: 10 }}
-        />
-        <br />
-        <input
-          placeholder="관리자 ID"
-          onChange={e => handleLogin(e.target.value, 'zigops_25')}
-          style={{ padding: 10, margin: 10 }}
-        />
-        {message && <p style={{ color: 'red' }}>{message}</p>}
+      <div
+        style={{
+          padding: 40,
+          fontFamily: 'Arial',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 50,
+          maxWidth: 600,
+          margin: '0 auto',
+        }}
+      >
+        {/* 좌측: 일반 사용자 로그인 */}
+        <div style={{ flex: 1, border: '1px solid #ccc', padding: 20, borderRadius: 8 }}>
+          <h2 style={{ textAlign: 'center' }}>멸망전 팀장명 로그인</h2>
+          <input
+            type="text"
+            placeholder="팀장명 입력"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            style={{ width: '100%', padding: 10, marginTop: 20, fontSize: 16 }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleUserLogin();
+            }}
+          />
+          <button
+            onClick={handleUserLogin}
+            style={{
+              marginTop: 20,
+              width: '100%',
+              padding: 10,
+              fontSize: 16,
+              backgroundColor: '#4caf50',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            로그인
+          </button>
+        </div>
+
+        {/* 우측: 관리자 로그인 */}
+        <div style={{ flex: 1, border: '1px solid #ccc', padding: 20, borderRadius: 8 }}>
+          <h2 style={{ textAlign: 'center' }}>관리자 로그인</h2>
+          <input
+            type="text"
+            placeholder="관리자 ID"
+            value={adminId}
+            onChange={e => setAdminId(e.target.value)}
+            style={{ width: '100%', padding: 10, marginTop: 20, fontSize: 16 }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleAdminLogin();
+            }}
+          />
+          <input
+            type="password"
+            placeholder="비밀번호"
+            value={adminPass}
+            onChange={e => setAdminPass(e.target.value)}
+            style={{ width: '100%', padding: 10, marginTop: 10, fontSize: 16 }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleAdminLogin();
+            }}
+          />
+          <button
+            onClick={handleAdminLogin}
+            style={{
+              marginTop: 20,
+              width: '100%',
+              padding: 10,
+              fontSize: 16,
+              backgroundColor: '#2196f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            관리자 로그인
+          </button>
+        </div>
+
+        {/* 메시지 */}
+        <div style={{ position: 'absolute', bottom: 20, width: '100%', textAlign: 'center', color: 'red' }}>
+          {message && <p>{message}</p>}
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ display: 'flex', fontFamily: 'Arial', padding: 20, gap: 20 }}>
-      {/* 좌측: 낙찰 목록 */}
-      <div style={{ flex: '1', minWidth: 250 }}>
+      {/* 좌측: 낙찰 목록 (가로 한 줄) */}
+      <div
+        style={{
+          flex: '2',
+          minWidth: 250,
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+          paddingBottom: 10,
+        }}
+      >
         <h3>🏆 낙찰 현황</h3>
         {auctionResults.length === 0 ? (
           <p>낙찰 내역 없음</p>
         ) : (
           auctionResults.map(({ user, item, price }, i) => (
-            <div key={i} style={{ background: '#eee', padding: 10, marginBottom: 10, borderRadius: 6 }}>
-              <strong>{user}</strong><br />
-              선수: {item}<br />
+            <div
+              key={i}
+              style={{
+                display: 'inline-block',
+                background: '#eee',
+                padding: 10,
+                marginRight: 10,
+                borderRadius: 6,
+                minWidth: 150,
+                verticalAlign: 'top',
+                boxSizing: 'border-box',
+              }}
+              title={`${user} 선수: ${item}, 금액: ${price.toLocaleString()}P`}
+            >
+              <strong>{user}</strong>
+              <br />
+              선수: {item}
+              <br />
               금액: {price.toLocaleString()}P
             </div>
           ))
         )}
       </div>
 
-      {/* 가운데: 선수 소개 및 로그 */}
-      <div style={{ flex: '2', minWidth: 400 }}>
+      {/* 가운데: 선수 소개 및 입찰 로그 (좁게) */}
+      <div style={{ flex: '1', minWidth: 250 }}>
         <h3>🎯 입찰 선수 소개</h3>
         {currentItem ? (
           <div style={{ marginBottom: 20 }}>
@@ -180,30 +290,36 @@ function App() {
       {/* 우측: 입찰 UI */}
       <div style={{ flex: '1', minWidth: 300 }}>
         <h3>⚡ 실시간 입찰</h3>
-        <p>현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong></p>
+        <p>
+          현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
+        </p>
         <p>최고 입찰자: {highestBidder || '없음'}</p>
 
         {!isAdminVerified ? (
           <>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-              <input
-                type="number"
-                value={bidInput}
-                onChange={e => setBidInput(e.target.value)}
-                placeholder="입찰가"
-                style={{ padding: 8, width: '60%' }}
-              />
-              <button onClick={placeBid} style={{ padding: 8 }}>입찰</button>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <input
+              type="number"
+              value={bidInput}
+              onChange={e => setBidInput(e.target.value)}
+              placeholder="입찰가"
+              style={{ padding: 8, width: '80%' }}
+            />
+            <button onClick={placeBid} style={{ padding: 8, marginLeft: 10 }}>
+              입찰
+            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button
-                onClick={() => setBidInput(prev => String(Number(prev || currentBid) + 10))}
+                onClick={() =>
+                  setBidInput(prev => String(Number(prev || currentBid) + 10))
+                }
                 style={{ padding: '6px 12px', fontSize: 14 }}
               >
                 +10
               </button>
               <button
-                onClick={() => setBidInput(prev => String(Number(prev || currentBid) + 100))}
+                onClick={() =>
+                  setBidInput(prev => String(Number(prev || currentBid) + 100))
+                }
                 style={{ padding: '6px 12px', fontSize: 14 }}
               >
                 +100
@@ -211,7 +327,6 @@ function App() {
             </div>
           </>
         ) : (
-          
           <>
             <input
               value={itemInput}
@@ -219,8 +334,12 @@ function App() {
               placeholder="입찰 선수 ID"
               style={{ padding: 8, width: '80%' }}
             />
-            <button onClick={startAuction} style={{ marginTop: 10, padding: 8 }}>입찰 시작</button>
-            <button onClick={declareWinner} style={{ marginTop: 10, padding: 8 }}>낙찰 처리</button>
+            <button onClick={startAuction} style={{ marginTop: 10, padding: 8 }}>
+              입찰 시작
+            </button>
+            <button onClick={declareWinner} style={{ marginTop: 10, padding: 8 }}>
+              낙찰 처리
+            </button>
             <button
               onClick={resetAuction}
               style={{ marginTop: 10, padding: 8, backgroundColor: '#f33', color: 'white' }}
