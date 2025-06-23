@@ -139,20 +139,22 @@ function App() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 30 }}>
           <div style={{ flex: 1, maxWidth: 250 }}>
             <h3>팀장명</h3>
-            <input
-              type="text"
-              placeholder="팀장명 입력 (예: 팀1)"
-              value={loginInput}
-              onChange={e => setLoginInput(e.target.value)}
-              style={{ width: '100%', padding: 10 }}
-            />
-            <button
-              onClick={() => setUsername(loginInput.trim())}
-              disabled={!loginInput.trim()}
-              style={{ marginTop: 10, padding: 10, width: '100%' }}
-            >
-              로그인
-            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input
+                type="text"
+                placeholder="팀장명 입력 (예: 팀1)"
+                value={loginInput}
+                onChange={e => setLoginInput(e.target.value)}
+                style={{ flex: 1, padding: 10 }}
+              />
+              <button
+                onClick={() => setUsername(loginInput.trim())}
+                disabled={!loginInput.trim()}
+                style={{ flex: 1, padding: 10 }}
+              >
+                로그인
+              </button>
+            </div>
           </div>
           <div style={{ flex: 1, maxWidth: 250 }}>
             <h3>관리자 로그인</h3>
