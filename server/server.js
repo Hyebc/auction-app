@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeBid', ({ bid, user, chance }) => {
-    const time = new Date().toISOstring();
+    const time = new Date().toISOString();
 
     if (!TEAM_NAMES.includes(user)) {
       socket.emit('bidRejected', { message: '유효하지 않은 팀명입니다.' });
@@ -90,7 +90,7 @@ io.on('connection', (socket) => {
       currentBid = bestChance.bid;
       highestBidder = bestChance.user;
 
-      io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints, serverChanceUsed: chanceUsed });
+      io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints, currentItem,serverChanceUsed: chanceUsed });
       console.log(`🃏 찬스권 입찰: ${user} ${bid}P`);
       return;
 }
