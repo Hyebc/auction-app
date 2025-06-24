@@ -369,6 +369,8 @@ function App() {
     }
 
     return (
+      <>
+       <UserBar />
       <div
         style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
       >
@@ -524,15 +526,17 @@ function App() {
           {message && <p style={{ color: 'red' }}>{message}</p>}
         </div>
       </div>
+      </>
     );
   }
 
   // 관리자 화면
   return (
+    <>
+    <UserBar />
     <div
       style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
     >
-      {/* 관리자 화면 - 팀별 낙찰 현황 */}
 <div style={{ flex: 7 }}>
   <h3>🏆 팀별 낙찰 현황</h3>
   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -586,6 +590,7 @@ function App() {
         <span>{name} | {points.toLocaleString()}P</span>
         <span title={chanceTitle}>{chanceIcon}</span>
       </div>
+    
 
       {teamResults.length === 0 ? (
         <div style={{ color: '#999' }}>낙찰 없음</div>
@@ -701,12 +706,12 @@ function App() {
                   if (b.time) {
                     const date = new Date(b.time);
                     timeStr = isNaN(date.getTime()) ? b.time : date.toLocaleTimeString();
-      }
-      return (
-        <div key={i}>
-          {timeStr} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
-        </div>
-      );
+                  }
+                  return (
+                    <div key={i}>
+                      {timeStr} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
+                    </div>
+                  );
 })}
           </div>
         </div>
@@ -714,6 +719,7 @@ function App() {
         {message && <p style={{ color: 'red' }}>{message}</p>}
       </div>
     </div>
+    </>
   );
 }
 
