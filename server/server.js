@@ -141,8 +141,17 @@ io.on('connection', (socket) => {
     highestBidder = null;
     bidHistory = [];
 
+    teamPoints = {};
+    TEAM_NAMES.forEach(name => {
+    teamPoints[name] = INITIAL_POINTS;
+  });
+
+
     io.emit('auctionResults', auctionResults);
     io.emit('resetAuction'); // 기존 초기화도 유지
+    io.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints }); // 포인트 포함 초기 데이터 전송
+
+    console.log('🔄 전체 초기화: 낙찰 기록 및 포인트 리셋됨');
   });
 
 
