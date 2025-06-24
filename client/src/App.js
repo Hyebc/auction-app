@@ -93,7 +93,7 @@ function App() {
 
   // 소켓 이벤트 리스너 등록 및 정리
   useEffect(() => {
-    socket.on('bidInit', ({ currentBid, highestBidder, bidHistory, currentItem, teamPoints: serverTeamPoints }) => {
+    socket.on('bidInit', ({ currentBid, highestBidder, bidHistory, currentItem, teamPoints: serverTeamPoints, serverChanceUsed }) => {
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
       setBidHistory(bidHistory);
@@ -102,21 +102,24 @@ function App() {
       if (serverTeamPoints && typeof serverTeamPoints === 'object') {
         setTeamPoints(serverTeamPoints);
       }
+      if (serverChanceUsed) setChanceUsed(serverChanceUsed);  // ✅
     });
 
-    socket.on('bidUpdate', ({ currentBid, highestBidder, newBid, teamPoints: serverTeamPoints }) => {
+    socket.on('bidUpdate', ({ currentBid, highestBidder, newBid, teamPoints: serverTeamPoints, serverChanceUsed }) => {
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
       setBidHistory((prev) => [...prev, newBid]);
       if (serverTeamPoints && typeof serverTeamPoints === 'object') {
         setTeamPoints(serverTeamPoints);
       }
+      if (serverChanceUsed) setChanceUsed(serverChanceUsed);  // ✅
     });
 
     socket.on('bidRejected', ({ message }) => setMessage(message));
 
-    socket.on('auctionEnded', ({ winner, price, itemName, teamPoints: serverTeamPoints }) => {
+    socket.on('auctionEnded', ({ winner, price, itemName, teamPoints: serverTeamPoints, serverChanceUsed }) => {
       alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price.toLocaleString()} 포인트`);
+      if (serverChanceUsed) setChanceUsed(serverChanceUsed);  // ✅
 
       // 찬스권 사용 기록 업데이트
       const updatedChanceUsed = TEAM_NAMES.reduce((acc, name) => {
@@ -182,7 +185,8 @@ function App() {
       setPlayerIntro('');
       setCountdown(null);
       clearInterval(countdownInterval.current);
-
+      setChanceUsed(
+    TEAM_NAMES.reduce((acc, name) => ({ ...acc, [name]: false }), {}));  // ✅ 찬스권 상태 초기화
     });
 
     return () => {
@@ -368,8 +372,16 @@ function App() {
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   }}
                 >
-                  <div style={{ fontWeight: 'bold' }}>
-                    {name} | {points.toLocaleString()}P
+                  <div style={{ 
+                    fontWeight: 'bold', 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span>{name} | {points.toLocaleString()}P</span>
+                    <span title={chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용'}>
+                      {chanceUsed[name] ? '🔒' : '🃏'}
+                    </span>
                   </div>
                   {teamResults.length === 0 ? (
                     <div style={{ color: '#999' }}>낙찰 없음</div>

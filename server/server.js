@@ -28,8 +28,10 @@ const INITIAL_POINTS = 1000;
 
 // 팀별 포인트 객체 { 팀명: 포인트 }
 let teamPoints = {};
+let chanceUsed = {};
 TEAM_NAMES.forEach(name => {
   teamPoints[name] = INITIAL_POINTS;
+  chanceUsed[name] = false;
 });
 
 let currentBid = 0;
@@ -71,6 +73,26 @@ io.on('connection', (socket) => {
       return;
     }
 
+    if (chance) {
+      // 찬스권이 이미 사용되었는지 확인
+      if (chanceUsed[user]) {
+        socket.emit('bidRejected', { message: '이미 찬스권을 사용했습니다.' });
+        return;
+      }
+
+    // 찬스권 사용은 현재가 무시 → 무조건 낙찰 우선권 부여
+      currentBid = bid;
+      highestBidder = user;
+      chanceUsed[user] = true;
+
+      const newBid = { bid, user, time, chance: true };
+      bidHistory.push(newBid);
+
+      io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints,serverChanceUsed: chanceUsed });
+      console.log(`🃏 찬스권 사용: ${user}님이 ${bid}P 입찰`);
+      return;
+    }
+
     if (bid > currentBid) {
       currentBid = bid;
       highestBidder = user;
@@ -105,6 +127,7 @@ io.on('connection', (socket) => {
         price: currentBid,
         itemName: currentItem,
         teamPoints,
+        serverChanceUsed: chanceUsed
       });
 
       io.emit('auctionResults', auctionResults);
@@ -144,13 +167,13 @@ io.on('connection', (socket) => {
     teamPoints = {};
     TEAM_NAMES.forEach(name => {
     teamPoints[name] = INITIAL_POINTS;
+    chanceUsed = {};
   });
 
 
     io.emit('auctionResults', auctionResults);
     io.emit('resetAuction'); // 기존 초기화도 유지
-    io.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints }); // 포인트 포함 초기 데이터 전송
-
+    io.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints, serverChanceUsed: chanceUsed }); // 포인트 포함 초기 데이터 전송
     console.log('🔄 전체 초기화: 낙찰 기록 및 포인트 리셋됨');
   });
 
