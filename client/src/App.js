@@ -503,8 +503,16 @@ function App() {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}
               >
-                <div style={{ fontWeight: 'bold' }}>
-                  {name} | {points.toLocaleString()}P
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>{name} | {points.toLocaleString()}P</span>
+                  <span title={chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용'}>
+                    {chanceUsed[name] ? '🔒' : '🃏'}
+                  </span>
                 </div>
                 {teamResults.length === 0 ? (
                   <div style={{ color: '#999' }}>낙찰 없음</div>
