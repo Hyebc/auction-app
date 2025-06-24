@@ -74,16 +74,18 @@ io.on('connection', (socket) => {
         socket.emit('bidRejected', { message: '이미 찬스권을 사용했습니다.' });
         return;
       }
-    
+
+  // 입찰가 높이기 조건 검사 삭제 (이 부분을 없앰)
+
       chanceUsed[user] = true;
 
-      // 기존 찬스권 입찰 제거 후 새 입찰 등록
+  // 기존 찬스권 입찰 제거 후 새 입찰 등록
       chanceBids = chanceBids.filter(b => b.user !== user);
       const newBid = { bid, user, time, chance: true };
       chanceBids.push({ user, bid, time });
       bidHistory.push(newBid);
 
-      // 현재 찬스권 입찰 중 최고가 반영
+  // 현재 찬스권 입찰 중 최고가 반영
       const bestChance = chanceBids.reduce((max, cur) => cur.bid > max.bid ? cur : max, chanceBids[0]);
       currentBid = bestChance.bid;
       highestBidder = bestChance.user;
@@ -91,7 +93,8 @@ io.on('connection', (socket) => {
       io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints, serverChanceUsed: chanceUsed });
       console.log(`🃏 찬스권 입찰: ${user} ${bid}P`);
       return;
-    }
+}
+
 
 
     if (bid > currentBid) {
