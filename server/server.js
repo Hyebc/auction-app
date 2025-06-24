@@ -134,6 +134,18 @@ io.on('connection', (socket) => {
     }, seconds * 1000);
   });
 
+  socket.on('resetAll', () => {
+    auctionResults = [];
+    currentItem = null;
+    currentBid = 0;
+    highestBidder = null;
+    bidHistory = [];
+
+    io.emit('auctionResults', auctionResults);
+    io.emit('resetAuction'); // 기존 초기화도 유지
+  });
+
+
   socket.on('disconnect', () => {
     console.log(`❌ 사용자 퇴장: ${socket.id}`);
   });

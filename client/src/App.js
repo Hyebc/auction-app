@@ -246,6 +246,12 @@ function App() {
 
   const resetAuction = () => socket.emit('resetAuction');
 
+  const resetAllAuctions = () => {
+  if (window.confirm('전체 경매 기록을 초기화하시겠습니까?')) {
+    socket.emit('resetAll');
+  }
+};
+
   const startCountdown = (seconds) => {
     socket.emit('countdownStart', { seconds });
   };
@@ -572,6 +578,10 @@ function App() {
         >
           초기화
         </button>
+        <button
+          onClick={resetAllAuctions}
+          style={{ backgroundColor: '#f33', color: 'white', width: '100%' }}
+        ></button>
 
         <div>
           <h4>
