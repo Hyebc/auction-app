@@ -106,9 +106,13 @@ function App() {
     });
 
     socket.on('bidUpdate', ({ currentBid, highestBidder, newBid, teamPoints: serverTeamPoints, serverChanceUsed }) => {
+      if (newBid) {
+      setBidHistory(prev => [...prev, newBid]);
+      }
+      
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
-      setBidHistory((prev) => [...prev, newBid]);
+      
       if (serverTeamPoints && typeof serverTeamPoints === 'object') {
         setTeamPoints(serverTeamPoints);
       }

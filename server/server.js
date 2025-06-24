@@ -142,6 +142,15 @@ io.on('connection', (socket) => {
 
       auctionResults.push({ user: winner, item: currentItem, price: finalPrice, chance: isChance });
 
+      io.emit('bidUpdate', {
+        currentBid: 0,
+        highestBidder: null,
+        newBid: null,
+        teamPoints,
+        currentItem: null,
+        serverChanceUsed: chanceUsed
+      });
+
       io.emit('auctionEnded', {
         winner,
         price: finalPrice,
@@ -155,6 +164,15 @@ io.on('connection', (socket) => {
       chanceBids.forEach(bid => {
         chanceUsed[bid.user] = false;
       });
+
+      io.emit('auctionEnded', {
+        winner: null,
+        price: 0,
+        itemName: currentItem,
+        teamPoints,
+        serverChanceUsed: chanceUsed,
+     });
+
       socket.emit('bidRejected', { message: '낙찰처리 불가 - 유효한 낙찰자가 없습니다.' });
     }
 
