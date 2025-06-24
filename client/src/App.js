@@ -121,13 +121,6 @@ function App() {
       alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price.toLocaleString()} 포인트`);
       if (serverChanceUsed) setChanceUsed(serverChanceUsed);  // ✅
 
-      // 찬스권 사용 기록 업데이트
-      const updatedChanceUsed = TEAM_NAMES.reduce((acc, name) => {
-        acc[name] = name === winner;
-        return acc;
-      }, {});
-      setChanceUsed(updatedChanceUsed);
-
       setCurrentBid(0);
       setHighestBidder(null);
       setBidHistory([]);
@@ -465,7 +458,7 @@ function App() {
                 ? '입찰 로그가 공개되지 않았습니다.'
                 : visibleBidHistory.map((b, i) => (
                     <div key={i}>
-                      {b.time} - {b.user} {b.chance ? ' (찬스권)' : ''}: {b.bid.toLocaleString()}P
+                      {b.time} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
                     </div>
                   ))}
             </div>

@@ -64,24 +64,27 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (teamPoints[user] < bid) {
-      socket.emit('bidRejected', { message: '잔여 포인트가 부족합니다.' });
-      return;
-    }
-
     if (chance) {
       if (chanceUsed[user]) {
         socket.emit('bidRejected', { message: '이미 찬스권을 사용했습니다.' });
         return;
       }
+      if (bid <= 0 || isNaN(bid)) {
+        socket.emit('bidRejected', { message: '유효한 입찰가를 입력하세요.' });
+        return;
+      }
+
+    if (teamPoints[user] < bid) {
+      socket.emit('bidRejected', { message: '잔여 포인트가 부족합니다.' });
+      return;
+    }
 
       chanceUsed[user] = true;
 
       // 기존 찬스권 입찰 제거 후 새 입찰 등록
       chanceBids = chanceBids.filter(b => b.user !== user);
-      chanceBids.push({ user, bid, time });
-
       const newBid = { bid, user, time, chance: true };
+      chanceBids.push({ user, bid, time });
       bidHistory.push(newBid);
 
       // 현재 찬스권 입찰 중 최고가 반영
