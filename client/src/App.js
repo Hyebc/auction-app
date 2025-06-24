@@ -35,6 +35,28 @@ function App() {
   const [countdown, setCountdown] = useState(null);
 
   const countdownInterval = useRef(null);
+  const logout = () => {
+    setUsername('');
+    setIsAdminVerified(false);
+    setMessage('');
+  };
+  const UserBar = () => (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0,
+      background: '#333', color: 'white', padding: '10px 20px',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      zIndex: 1000, height: 50
+    }}>
+      <div>
+        👤 사용자: <strong>{username}</strong>
+      </div>
+      <button onClick={logout} style={{ background: 'white', color: '#333', padding: '5px 10px', cursor: 'pointer' }}>
+        로그아웃
+      </button>
+    </div>
+  );
+
+
 
   // 구글 시트에서 선수 목록 로드 및 선수 소개 업데이트
   useEffect(() => {
@@ -109,7 +131,7 @@ function App() {
       if (newBid) {
       setBidHistory(prev => [...prev, newBid]);
       }
-      
+
       setCurrentBid(currentBid);
       setHighestBidder(highestBidder);
       
@@ -269,6 +291,7 @@ function App() {
     }
   };
 
+  
   // 로그인 화면
   if (!username) {
     return (
@@ -347,7 +370,7 @@ function App() {
 
     return (
       <div
-        style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20 }}
+        style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
       >
         <div style={{ flex: 7 }}>
           <h3>🏆 팀별 낙찰 현황</h3>
@@ -507,7 +530,7 @@ function App() {
   // 관리자 화면
   return (
     <div
-      style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20 }}
+      style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
     >
       {/* 관리자 화면 - 팀별 낙찰 현황 */}
 <div style={{ flex: 7 }}>
