@@ -118,7 +118,7 @@ function App() {
     socket.on('bidRejected', ({ message }) => setMessage(message));
 
     socket.on('auctionEnded', ({ winner, price, itemName, teamPoints: serverTeamPoints, serverChanceUsed }) => {
-      alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price.toLocaleString()} 포인트`);
+      alert(`🎉 ${itemName}의 낙찰자: ${winner}, 금액: ${price ? toLocaleString() : 0} 포인트`);
       if (serverChanceUsed) setChanceUsed(serverChanceUsed);  // ✅
 
       setCurrentBid(0);
@@ -479,11 +479,18 @@ function App() {
             <div style={{ maxHeight: 200, overflowY: 'auto' }}>
               {visibleBidHistory.length === 0
                 ? '입찰 로그가 공개되지 않았습니다.'
-                : visibleBidHistory.map((b, i) => (
+                : visibleBidHistory.map((b, i) => {
+                    let timeStr = b.time;
+                    if (b.time) {
+                    const date = new Date(b.time);
+                    timeStr = isNaN(date.getTime()) ? b.time : date.toLocaleTimeString();
+                    }
+                    return (
                     <div key={i}>
-                      {b.time} - {b.user} {b.chance ? ' (🃏)' : ''}: {b.bid.toLocaleString()}P
+                      {timeStr} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
                     </div>
-                  ))}
+                    );
+                  })}
             </div>
           </div>
 
@@ -661,11 +668,18 @@ function App() {
           <div style={{ maxHeight: 200, overflowY: 'auto' }}>
             {visibleBidHistory.length === 0
               ? '입찰 기록 없음'
-              : visibleBidHistory.map((b, i) => (
-                  <div key={i}>
-                    {b.time} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
-                  </div>
-                ))}
+              : visibleBidHistory.map((b, i) => {
+                 let timeStr = b.time;
+                  if (b.time) {
+                    const date = new Date(b.time);
+                    timeStr = isNaN(date.getTime()) ? b.time : date.toLocaleTimeString();
+      }
+      return (
+        <div key={i}>
+          {timeStr} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
+        </div>
+      );
+})}
           </div>
         </div>
 

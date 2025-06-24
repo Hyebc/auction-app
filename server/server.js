@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeBid', ({ bid, user, chance }) => {
-    const time = new Date().toLocaleTimeString();
+    const time = new Date().toISOstring();
 
     if (!TEAM_NAMES.includes(user)) {
       socket.emit('bidRejected', { message: '유효하지 않은 팀명입니다.' });
