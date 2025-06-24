@@ -135,7 +135,7 @@ io.on('connection', (socket) => {
       teamPoints[winner] -= finalPrice;
       if (teamPoints[winner] < 0) teamPoints[winner] = 0;
 
-      auctionResults.push({ user: winner, item: currentItem, price: finalPrice });
+      auctionResults.push({ user: winner, item: currentItem, price: finalPrice, chance: true });
 
       io.emit('auctionEnded', {
         winner,

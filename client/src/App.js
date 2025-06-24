@@ -351,59 +351,81 @@ function App() {
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
           >
             {TEAM_NAMES.map((name, idx) => {
-              const points = teamPoints[name] ?? INITIAL_POINTS;
-              const teamResults = auctionResults.filter(
-                (r) => r.user === name
-              );
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    background: '#fff',
-                    borderRadius: 8,
-                    padding: 8,
-                    fontSize: 13,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  <div style={{ 
-                    fontWeight: 'bold', 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span>{name} | {points.toLocaleString()}P</span>
-                    <span title={chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용'}>
-                      {chanceUsed[name] ? '🔒' : '🃏'}
-                    </span>
-                  </div>
-                  {teamResults.length === 0 ? (
-                    <div style={{ color: '#999' }}>낙찰 없음</div>
-                  ) : (
-                    <ul
-                      style={{
-                        margin: 0,
-                        padding: 0,
-                        listStyle: 'none',
-                      }}
-                    >
-                      {teamResults.map((r, i) => (
-                        <li
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <span>{r.item}</span>
-                          <span>{r.price.toLocaleString()}P</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
+  const points = teamPoints[name] ?? INITIAL_POINTS;
+  const teamResults = auctionResults
+    .filter((r) => r.user === name)
+    .map(({ item, bid, chance }) => ({ item, price: bid, chance }));
+
+  const hasWonWithChance = teamResults.some((r) => r.chance);
+  const isUsingChanceButNotWon =
+    visibleBidHistory.length > 0 &&
+    chanceUsed[name] &&
+    !hasWonWithChance;
+
+  let chanceIcon = '';
+  let chanceTitle = '';
+
+  if (hasWonWithChance) {
+    chanceIcon = '🔒';
+    chanceTitle = '찬스권 사용함';
+  } else if (isUsingChanceButNotWon) {
+    chanceIcon = '🛡️';
+    chanceTitle = '찬스권 사용 중';
+  } else {
+    chanceIcon = '🃏';
+    chanceTitle = '찬스권 보유중';
+  }
+
+  return (
+    <div
+      key={idx}
+      style={{
+        background: '#fff',
+        borderRadius: 8,
+        padding: 8,
+        fontSize: 13,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 'bold',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span>{name} | {points.toLocaleString()}P</span>
+        <span title={chanceTitle}>{chanceIcon}</span>
+      </div>
+
+      {teamResults.length === 0 ? (
+        <div style={{ color: '#999' }}>낙찰 없음</div>
+      ) : (
+        <ul
+          style={{
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+          }}
+        >
+          {teamResults.map((r, i) => (
+            <li
+              key={i}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>{r.item}</span>
+              <span>{r.price.toLocaleString()}P</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+})}
           </div>
         </div>
 
@@ -476,70 +498,91 @@ function App() {
     <div
       style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20 }}
     >
-      <div style={{ flex: 7 }}>
-        <h3>🏆 팀별 낙찰 현황</h3>
-        <div
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
-        >
-          {TEAM_NAMES.map((name, idx) => {
-            const points = teamPoints[name] ?? INITIAL_POINTS;
-            const teamResults = visibleBidHistory
-              .filter((r) => r.user === name)
-              .map(({ item, bid }) => ({ item, price: bid }))
-            
-              return (
-              <div
-                key={idx}
-                style={{
-                  background: '#fff',
-                  borderRadius: 8,
-                  padding: 8,
-                  fontSize: 13,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                }}
-              >
-                <div style={{ 
-                  fontWeight: 'bold', 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <span>{name} | {points.toLocaleString()}P</span>
-                  <span title={visibleBidHistory.length > 0 ? (chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용') :''}>
-                    {visibleBidHistory.length > 0 ? (chanceUsed[name] ? '🔒' : '🃏') : ''}
-                  </span>
-                </div>
+      {/* 관리자 화면 - 팀별 낙찰 현황 */}
+<div style={{ flex: 7 }}>
+  <h3>🏆 팀별 낙찰 현황</h3>
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+    {TEAM_NAMES.map((name, idx) => {
+  const points = teamPoints[name] ?? INITIAL_POINTS;
+  const teamResults = auctionResults
+    .filter((r) => r.user === name)
+    .map(({ item, bid, chance }) => ({ item, price: bid, chance }));
 
+  // 🔍 조건 판별
+  const hasWonWithChance = teamResults.some((r) => r.chance);
+  const isUsingChanceButNotWon =
+    visibleBidHistory.length > 0 &&
+    chanceUsed[name] &&
+    !hasWonWithChance;
 
-                {teamResults.length === 0 ? (
-                  <div style={{ color: '#999' }}>낙찰 없음</div>
-                ) : (
-                  <ul
-                    style={{
-                      margin: 0,
-                      padding: 0,
-                      listStyle: 'none',
-                    }}
-                  >
-                    {teamResults.map((r, i) => (
-                      <li
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span>{r.item}</span>
-                        <span>{r.price.toLocaleString()}P</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
+  // 🪄 아이콘/툴팁 결정
+  let chanceIcon = '';
+  let chanceTitle = '';
+
+  if (hasWonWithChance) {
+    chanceIcon = '🔒';
+    chanceTitle = '찬스권 사용함';
+  } else if (isUsingChanceButNotWon) {
+    chanceIcon = '🛡️';
+    chanceTitle = '찬스권 사용 중';
+  } else {
+    chanceIcon = '🃏';
+    chanceTitle = '찬스권 보유중';
+  }
+
+  return (
+    <div
+      key={idx}
+      style={{
+        background: '#fff',
+        borderRadius: 8,
+        padding: 8,
+        fontSize: 13,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 'bold',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span>{name} | {points.toLocaleString()}P</span>
+        <span title={chanceTitle}>{chanceIcon}</span>
       </div>
+
+      {teamResults.length === 0 ? (
+        <div style={{ color: '#999' }}>낙찰 없음</div>
+      ) : (
+        <ul
+          style={{
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+          }}
+        >
+          {teamResults.map((r, i) => (
+            <li
+              key={i}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>{r.item}</span>
+              <span>{r.price.toLocaleString()}P</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+      );
+    })}
+  </div>
+</div>
+
 
       <div style={{ flex: 3 }}>
         <h3>⚡ 실시간 입찰</h3>
