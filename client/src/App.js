@@ -354,7 +354,7 @@ function App() {
   const points = teamPoints[name] ?? INITIAL_POINTS;
   const teamResults = auctionResults
     .filter((r) => r.user === name)
-    .map(({ item, bid, chance }) => ({ item, price: bid, chance }));
+    .map(({ item, price, chance }) => ({ item, price, chance }));
 
   const hasWonWithChance = teamResults.some((r) => r.chance);
   const isUsingChanceButNotWon =
@@ -418,7 +418,7 @@ function App() {
               }}
             >
               <span>{r.item}</span>
-              <span>{r.price.toLocaleString()}P</span>
+              <span>{(r.price ?? 0).toLocaleString()}P</span>
             </li>
           ))}
         </ul>
@@ -513,7 +513,7 @@ function App() {
   const points = teamPoints[name] ?? INITIAL_POINTS;
   const teamResults = auctionResults
     .filter((r) => r.user === name)
-    .map(({ item, bid, chance }) => ({ item, price: bid, chance }));
+    .map(({ item, price, chance }) => ({ item, price, chance }));
 
   // 🔍 조건 판별
   const hasWonWithChance = teamResults.some((r) => r.chance);
@@ -579,7 +579,7 @@ function App() {
               }}
             >
               <span>{r.item}</span>
-              <span>{r.price.toLocaleString()}P</span>
+              <span>{(r.price ?? 0).toLocaleString()}P</span>
             </li>
           ))}
         </ul>
@@ -643,6 +643,7 @@ function App() {
           카운트다운 3초 시작
         </button>
         <button
+          type="button"
           onClick={declareWinner}
           style={{ marginBottom: 10, width: '100%' }}
         >
