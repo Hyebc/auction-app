@@ -152,6 +152,9 @@ io.on('connection', (socket) => {
       io.emit('auctionResults', auctionResults);
       console.log(`🎉 낙찰자: ${winner} - ${finalPrice}P (찬스: ${isChance})`);
     } else {
+      chanceBids.forEach(bid => {
+        chanceUsed[bid.user] = false;
+      });
       socket.emit('bidRejected', { message: '낙찰처리 불가 - 유효한 낙찰자가 없습니다.' });
     }
 
