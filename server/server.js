@@ -7,10 +7,8 @@ const path = require('path');
 const app = express();
 app.use(cors());
 
-// React 빌드 폴더를 정적 파일로 서빙
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-// React 라우팅 지원 - 모든 GET 요청에 index.html 반환
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
@@ -26,9 +24,9 @@ const TEAM_NAMES = [
 ];
 const INITIAL_POINTS = 1000;
 
-// 팀별 포인트 객체 { 팀명: 포인트 }
 let teamPoints = {};
 let chanceUsed = {};
+let chanceBids = [];
 TEAM_NAMES.forEach(name => {
   teamPoints[name] = INITIAL_POINTS;
   chanceUsed[name] = false;
@@ -38,28 +36,26 @@ let currentBid = 0;
 let highestBidder = null;
 let bidHistory = [];
 let currentItem = null;
-let auctionResults = []; // 낙찰 목록 저장용
+let auctionResults = [];
 let countdownTimer = null;
 
 io.on('connection', (socket) => {
   console.log(`✅ 사용자 접속: ${socket.id}`);
 
-  // 초기 데이터 전달 (포인트 포함)
   socket.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints });
   socket.emit('auctionResults', auctionResults);
 
-  // 관리자 전용 입찰 시작 이벤트
   socket.on('startAuction', (itemName) => {
     currentItem = itemName;
     currentBid = 0;
     highestBidder = null;
     bidHistory = [];
+    chanceBids = [];
 
     io.emit('auctionStarted', { itemName });
     console.log(`📦 입찰 시작: ${itemName}`);
   });
 
-  // 입찰 처리
   socket.on('placeBid', ({ bid, user, chance }) => {
     const time = new Date().toLocaleTimeString();
 
@@ -74,22 +70,27 @@ io.on('connection', (socket) => {
     }
 
     if (chance) {
-      // 찬스권이 이미 사용되었는지 확인
       if (chanceUsed[user]) {
         socket.emit('bidRejected', { message: '이미 찬스권을 사용했습니다.' });
         return;
       }
 
-    // 찬스권 사용은 현재가 무시 → 무조건 낙찰 우선권 부여
-      currentBid = bid;
-      highestBidder = user;
       chanceUsed[user] = true;
+
+      // 기존 찬스권 입찰 제거 후 새 입찰 등록
+      chanceBids = chanceBids.filter(b => b.user !== user);
+      chanceBids.push({ user, bid, time });
 
       const newBid = { bid, user, time, chance: true };
       bidHistory.push(newBid);
 
-      io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints,serverChanceUsed: chanceUsed });
-      console.log(`🃏 찬스권 사용: ${user}님이 ${bid}P 입찰`);
+      // 현재 찬스권 입찰 중 최고가 반영
+      const bestChance = chanceBids.reduce((max, cur) => cur.bid > max.bid ? cur : max, chanceBids[0]);
+      currentBid = bestChance.bid;
+      highestBidder = bestChance.user;
+
+      io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints, serverChanceUsed: chanceUsed });
+      console.log(`🃏 찬스권 입찰: ${user} ${bid}P`);
       return;
     }
 
@@ -97,53 +98,63 @@ io.on('connection', (socket) => {
       currentBid = bid;
       highestBidder = user;
 
-      const newBid = { bid, user, time, chance: !!chance };
+      const newBid = { bid, user, time, chance: false };
       bidHistory.push(newBid);
 
       io.emit('bidUpdate', { currentBid, highestBidder, newBid, teamPoints });
-
-      console.log(`💸 ${user}님이 ${bid}원 입찰 (${time})${chance ? ' [찬스권]' : ''}`);
+      console.log(`💸 일반 입찰: ${user} ${bid}P`);
     } else {
       socket.emit('bidRejected', { message: '입찰가가 현재가보다 낮습니다.' });
     }
   });
 
-  // 낙찰 처리
   socket.on('declareWinner', () => {
-    if (highestBidder && TEAM_NAMES.includes(highestBidder)) {
-      teamPoints[highestBidder] -= currentBid;
-      if (teamPoints[highestBidder] < 0) {
-        teamPoints[highestBidder] = 0;
-      }
+    let winner = null;
+    let finalPrice = 0;
 
-      auctionResults.push({
-        user: highestBidder,
-        item: currentItem,
-        price: currentBid,
-      });
+    if (chanceBids.length > 0) {
+      const bestChance = chanceBids.reduce((max, cur) => cur.bid > max.bid ? cur : max, chanceBids[0]);
+      winner = bestChance.user;
+      finalPrice = bestChance.bid;
+
+      chanceBids.forEach(bid => {
+        if (bid.user !== winner) {
+          chanceUsed[bid.user] = false; // 찬스권 환급
+        }
+    });
+
+    } else if (highestBidder) {
+      winner = highestBidder;
+      finalPrice = currentBid;
+    }
+
+    if (winner && TEAM_NAMES.includes(winner)) {
+      teamPoints[winner] -= finalPrice;
+      if (teamPoints[winner] < 0) teamPoints[winner] = 0;
+
+      auctionResults.push({ user: winner, item: currentItem, price: finalPrice });
 
       io.emit('auctionEnded', {
-        winner: highestBidder,
-        price: currentBid,
+        winner,
+        price: finalPrice,
         itemName: currentItem,
         teamPoints,
-        serverChanceUsed: chanceUsed
+        serverChanceUsed: chanceUsed,
       });
-
       io.emit('auctionResults', auctionResults);
-
-      console.log(`🎉 낙찰자: ${highestBidder}, 금액: ${currentBid}, 대상: ${currentItem}`);
-
-      currentBid = 0;
-      highestBidder = null;
-      bidHistory = [];
-      currentItem = null;
+      console.log(`🎉 낙찰자: ${winner} - ${finalPrice}P`);
     } else {
       socket.emit('bidRejected', { message: '낙찰처리 불가 - 유효한 낙찰자가 없습니다.' });
     }
+
+    // 초기화
+    currentBid = 0;
+    highestBidder = null;
+    bidHistory = [];
+    currentItem = null;
+    chanceBids = [];
   });
 
-  // 관리자 카운트다운 시작 이벤트 (예: 5초, 3초)
   socket.on('countdownStart', ({ seconds }) => {
     io.emit('countdownStart', { seconds });
     console.log(`⏳ 카운트다운 시작: ${seconds}초`);
@@ -151,7 +162,6 @@ io.on('connection', (socket) => {
     if (countdownTimer) clearTimeout(countdownTimer);
 
     countdownTimer = setTimeout(() => {
-      // 카운트다운 종료 시점에 입찰로그 공개 이벤트 전송
       io.emit('revealBidLog', { bidHistory });
       console.log('🔔 카운트다운 종료 - 입찰 로그 공개');
     }, seconds * 1000);
@@ -163,20 +173,20 @@ io.on('connection', (socket) => {
     currentBid = 0;
     highestBidder = null;
     bidHistory = [];
+    chanceBids = [];
 
     teamPoints = {};
-    TEAM_NAMES.forEach(name => {
-    teamPoints[name] = INITIAL_POINTS;
     chanceUsed = {};
-  });
-
+    TEAM_NAMES.forEach(name => {
+      teamPoints[name] = INITIAL_POINTS;
+      chanceUsed[name] = false;
+    });
 
     io.emit('auctionResults', auctionResults);
-    io.emit('resetAuction'); // 기존 초기화도 유지
-    io.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints, serverChanceUsed: chanceUsed }); // 포인트 포함 초기 데이터 전송
-    console.log('🔄 전체 초기화: 낙찰 기록 및 포인트 리셋됨');
+    io.emit('resetAuction');
+    io.emit('bidInit', { currentBid, highestBidder, bidHistory, currentItem, teamPoints, serverChanceUsed: chanceUsed });
+    console.log('🔄 전체 초기화 완료');
   });
-
 
   socket.on('disconnect', () => {
     console.log(`❌ 사용자 퇴장: ${socket.id}`);
