@@ -8,6 +8,39 @@ const TEAM_NAMES = [
   '첼린저서포터', '카이사홀릭', '도선생', '아쉬운척 미안한척', '배응칠', '열쇠조각2개'
 ];
 const INITIAL_POINTS = 1000;
+function UserBar({ username, logout }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      background: '#333',
+      color: 'white',
+      padding: '10px 20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      zIndex: 1000,
+      height: 50
+    }}>
+      <div>
+        👤 사용자: <strong>{username}</strong>
+      </div>
+      <button
+        onClick={logout}
+        style={{
+          background: 'white',
+          color: '#333',
+          padding: '5px 10px',
+          cursor: 'pointer'
+        }}
+      >
+        로그아웃
+      </button>
+    </div>
+  );
+}
 
 function App() {
   // 상태값 선언
@@ -372,7 +405,7 @@ function App() {
       <>
        <UserBar />
       <div
-        style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
+        style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 80, }}
       >
         <div style={{ flex: 7 }}>
           <h3>🏆 팀별 낙찰 현황</h3>
@@ -535,7 +568,7 @@ function App() {
     <>
     <UserBar />
     <div
-      style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 60, }}
+      style={{ display: 'flex', fontFamily: 'Nanum Square', padding: 20, gap: 20, paddingTop: 80, }}
     >
 <div style={{ flex: 7 }}>
   <h3>🏆 팀별 낙찰 현황</h3>
