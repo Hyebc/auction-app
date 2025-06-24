@@ -172,6 +172,18 @@ function App() {
     socket.on('revealBidLog', ({ bidHistory }) => {
       setVisibleBidHistory(bidHistory);
     });
+    
+    socket.on('resetAuction', () => {
+      setCurrentBid(0);
+      setHighestBidder(null);
+      setBidHistory([]);
+      setVisibleBidHistory([]);
+      setCurrentItem(null);
+      setPlayerIntro('');
+      setCountdown(null);
+      clearInterval(countdownInterval.current);
+
+    });
 
     return () => {
       socket.off('bidInit');
@@ -182,8 +194,10 @@ function App() {
       socket.off('auctionResults');
       socket.off('countdownStart');
       socket.off('revealBidLog');
+      socket.off('resetAuction');
       clearInterval(countdownInterval.current);
     };
+    
   }, []);
 
   // 입찰 함수
@@ -230,7 +244,7 @@ function App() {
 
   const declareWinner = () => socket.emit('declareWinner');
 
-  const resetAuction = () => window.location.reload();
+  const resetAuction = () => socket.emit('resetAuction');
 
   const startCountdown = (seconds) => {
     socket.emit('countdownStart', { seconds });
@@ -384,7 +398,11 @@ function App() {
         <div style={{ flex: 3 }}>
           <h3>⚡ 실시간 입찰</h3>
           <p>
-            최고 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
+             {visibleBidHistory.length > 0 ? (
+            <>최고 입찰가: <strong>{currentBid.toLocaleString()} P</strong></>
+             ) : (
+              <>최고 입찰가: <i>비공개</i></>
+             )}
           </p>
           <p style={{ fontWeight: 'bold' }}>
             카운트다운: {countdown !== null ? `${countdown}초` : '-'}
@@ -505,7 +523,8 @@ function App() {
         <p>
           현재 입찰가: <strong>{currentBid.toLocaleString()} P</strong>
         </p>
-        <p>최고 입찰자: {highestBidder || '없음'}</p>
+        <p>
+          최고 입찰자: {highestBidder || '없음'}</p>
         <p style={{ fontWeight: 'bold' }}>
           카운트다운: {countdown !== null ? `${countdown}초` : '-'}
         </p>
@@ -562,11 +581,11 @@ function App() {
         </div>
 
         <div>
-          <h4>📜 실시간 입찰 로그</h4>
+          <h4>📜 입찰 로그</h4>
           <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-            {bidHistory.length === 0
+            {visibleBidHistory.length === 0
               ? '입찰 기록 없음'
-              : bidHistory.map((b, i) => (
+              : visibleBidHistory.map((b, i) => (
                   <div key={i}>
                     {b.time} - {b.user} {b.chance ? ' (찬스권)' : ''}: {b.bid.toLocaleString()}P
                   </div>
