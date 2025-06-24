@@ -114,28 +114,33 @@ io.on('connection', (socket) => {
   socket.on('declareWinner', () => {
     let winner = null;
     let finalPrice = 0;
+    let isChance = false; // ✅ 추가
+
 
     if (chanceBids.length > 0) {
       const bestChance = chanceBids.reduce((max, cur) => cur.bid > max.bid ? cur : max, chanceBids[0]);
       winner = bestChance.user;
       finalPrice = bestChance.bid;
+      isChance = true;
 
       chanceBids.forEach(bid => {
         if (bid.user !== winner) {
           chanceUsed[bid.user] = false; // 찬스권 환급
         }
     });
+      chanceUsed[winner] = true;
 
     } else if (highestBidder) {
       winner = highestBidder;
       finalPrice = currentBid;
+      isChance = false;
     }
 
     if (winner && TEAM_NAMES.includes(winner)) {
       teamPoints[winner] -= finalPrice;
       if (teamPoints[winner] < 0) teamPoints[winner] = 0;
 
-      auctionResults.push({ user: winner, item: currentItem, price: finalPrice, chance: true });
+      auctionResults.push({ user: winner, item: currentItem, price: finalPrice, chance: isChance });
 
       io.emit('auctionEnded', {
         winner,
@@ -145,7 +150,7 @@ io.on('connection', (socket) => {
         serverChanceUsed: chanceUsed,
       });
       io.emit('auctionResults', auctionResults);
-      console.log(`🎉 낙찰자: ${winner} - ${finalPrice}P`);
+      console.log(`🎉 낙찰자: ${winner} - ${finalPrice}P (찬스: ${isChance})`);
     } else {
       socket.emit('bidRejected', { message: '낙찰처리 불가 - 유효한 낙찰자가 없습니다.' });
     }
