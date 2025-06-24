@@ -204,32 +204,32 @@ function App() {
       setMessage('유효한 팀명을 입력하세요.');
       return;
     }
-    if (bidValue <= currentBid) {
-      setMessage('입찰가는 현재가보다 높아야 합니다.');
-      return;
-    }
     if (isNaN(bidValue) || bidValue <= 0) {
-      setMessage('유효한 입찰가를 입력하세요.');
-      return;
+    setMessage('유효한 입찰가를 입력하세요.');
+    return;
+    }
+    if (!chanceActive && bidValue <= currentBid) {
+    setMessage('입찰가는 현재가보다 높아야 합니다.');
+    return;
     }
     if (teamPoints[username] < bidValue) {
       setMessage('잔여 포인트가 부족합니다.');
       return;
     }
     socket.emit('placeBid', {
-      bid: bidValue,
-      user: username,
-      chance: chanceActive && !chanceUsed[username],
-    });
+    bid: bidValue,
+    user: username,
+    chance: chanceActive && !chanceUsed[username],
+  });
 
-    if (chanceActive && !chanceUsed[username]) {
-      setChanceUsed((prev) => ({ ...prev, [username]: true }));
-    }
+  if (chanceActive && !chanceUsed[username]) {
+    setChanceUsed((prev) => ({ ...prev, [username]: true }));
+  }
 
-    setChanceActive(false);
-    setBidInput('');
-    setMessage('');
-  };
+  setChanceActive(false);
+  setBidInput('');
+  setMessage('');
+};
 
   // 관리자 기능 함수
   const startAuction = () => {
