@@ -582,15 +582,12 @@ function App() {
           낙찰 처리
         </button>
         <button
-          onClick={resetAuction}
+          onClick={resetAllAuctions}
           style={{ backgroundColor: '#f33', color: 'white', width: '100%' }}
         >
           초기화
         </button>
-        <button
-          onClick={resetAllAuctions}
-          style={{ backgroundColor: '#f33', color: 'white', width: '100%' }}
-        ></button>
+        
 
         <div>
           <h4>
