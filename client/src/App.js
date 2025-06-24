@@ -211,6 +211,7 @@ function App() {
     if (!chanceActive && bidValue <= currentBid) {
     setMessage('입찰가는 현재가보다 높아야 합니다.');
     return;
+
     }
     if (teamPoints[username] < bidValue) {
       setMessage('잔여 포인트가 부족합니다.');
@@ -458,7 +459,7 @@ function App() {
                 ? '입찰 로그가 공개되지 않았습니다.'
                 : visibleBidHistory.map((b, i) => (
                     <div key={i}>
-                      {b.time} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
+                      {b.time} - {b.user} {b.chance ? ' (🃏)' : ''}: {b.bid.toLocaleString()}P
                     </div>
                   ))}
             </div>
@@ -482,10 +483,11 @@ function App() {
         >
           {TEAM_NAMES.map((name, idx) => {
             const points = teamPoints[name] ?? INITIAL_POINTS;
-            const teamResults = auctionResults.filter(
-              (r) => r.user === name
-            );
-            return (
+            const teamResults = visibleBidHistory
+              .filter((r) => r.user === name)
+              .map(({ item, bid }) => ({ item, price: bid }))
+            
+              return (
               <div
                 key={idx}
                 style={{
@@ -503,10 +505,12 @@ function App() {
                   alignItems: 'center'
                 }}>
                   <span>{name} | {points.toLocaleString()}P</span>
-                  <span title={chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용'}>
-                    {chanceUsed[name] ? '🔒' : '🃏'}
+                  <span title={visibleBidHistory.length > 0 ? (chanceUsed[name] ? '찬스권 사용함' : '찬스권 미사용') :''}>
+                    {visibleBidHistory.length > 0 ? (chanceUsed[name] ? '🔒' : '🃏') : ''}
                   </span>
                 </div>
+
+
                 {teamResults.length === 0 ? (
                   <div style={{ color: '#999' }}>낙찰 없음</div>
                 ) : (
@@ -616,7 +620,7 @@ function App() {
               ? '입찰 기록 없음'
               : visibleBidHistory.map((b, i) => (
                   <div key={i}>
-                    {b.time} - {b.user} {b.chance ? ' (찬스권)' : ''}: {b.bid.toLocaleString()}P
+                    {b.time} - {b.user} {b.chance ? ' (🃏 찬스권)' : ''}: {b.bid.toLocaleString()}P
                   </div>
                 ))}
           </div>
