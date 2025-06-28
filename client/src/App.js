@@ -511,7 +511,7 @@ function App() {
               onChange={(e) => setBidInput(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button onClick={placeBid} disabled={countdown !== null}>
+            <button onClick={placeBid}>
               입찰
             </button>
           </div>
