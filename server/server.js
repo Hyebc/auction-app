@@ -97,7 +97,7 @@ io.on('connection', (socket) => {
 
 
 
-    if (bid > currentBid) {
+    if (bid >= currentBid) {
       currentBid = bid;
       highestBidder = user;
 
